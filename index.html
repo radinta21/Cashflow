@@ -408,12 +408,12 @@
       <div class="hero-amount" id="saldoTotal">Rp 0</div>
       <p class="hero-sub">Total saldo semua dompet</p>
       <div class="hero-row">
-        <div class="hero-col in">
-          <div class="k">Pemasukan</div>
+        <div class="hero-col in" onclick="openRingkasanSheet('Pemasukan')" style="cursor:pointer;">
+          <div class="k">Pemasukan ›</div>
           <div class="v" id="pemasukanBulanIni">Rp 0</div>
         </div>
-        <div class="hero-col out">
-          <div class="k">Pengeluaran</div>
+        <div class="hero-col out" onclick="openRingkasanSheet('Pengeluaran')" style="cursor:pointer;">
+          <div class="k">Pengeluaran ›</div>
           <div class="v" id="pengeluaranBulanIni">Rp 0</div>
         </div>
       </div>
@@ -627,6 +627,7 @@
     <div class="chip-row" id="dompetChips"></div>
 
     <div class="field-label" id="katLabel">Kategori</div>
+    <input class="text-input" id="kategoriSearchInput" placeholder="🔍 Cari kategori…" oninput="renderKategoriGridUI()" style="margin-bottom:10px;">
     <div class="kategori-grid" id="kategoriGrid"></div>
 
     <div class="field-label">Catatan (opsional)</div>
@@ -646,6 +647,13 @@
 
     <div class="field-label">Nama Kategori</div>
     <input class="text-input" id="kategoriNamaInput" placeholder="Contoh: Langganan Streaming">
+
+    <div class="field-label">Tipe Kategori</div>
+    <div class="chip-row" id="kategoriTipeChips">
+      <button class="chip" data-t="Pengeluaran" onclick="setKategoriTipeSel('Pengeluaran')">Pengeluaran</button>
+      <button class="chip" data-t="Pemasukan" onclick="setKategoriTipeSel('Pemasukan')">Pemasukan</button>
+      <button class="chip" data-t="Keduanya" onclick="setKategoriTipeSel('Keduanya')">Keduanya</button>
+    </div>
 
     <div class="field-label">Pilih Icon</div>
     <div class="icon-picker" id="kategoriIconPicker"></div>
@@ -725,6 +733,19 @@
   </div>
 </div>
 
+<!-- ============ SHEET: RINGKASAN PEMASUKAN / PENGELUARAN ============ -->
+<div class="overlay" id="overlay6" onclick="closeRingkasanSheet()"></div>
+<div class="sheet" id="sheetRingkasan">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeRingkasanSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="ringkasanTitle">Ringkasan</p>
+    <div id="ringkasanTotal" style="text-align:center;font-size:26px;font-weight:800;margin-bottom:2px;"></div>
+    <p style="text-align:center;font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:0 0 16px;">Bulan ini</p>
+    <div id="ringkasanList"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -737,10 +758,13 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNsU3EsUOdpokASyb5j
 const ADJUST_KATEGORI = "Penyesuaian Saldo";
 
 const KATEGORI_ICON_POOL = [
+  "💼","🌿","🎁","🔃","💳","💡","📱","🛡️","🛒","🚗",
+  "🎮","💇","🆘","🐷","📈","👛","🤝","🔁","🗂️","🖇️",
+  "🏥","🧾","🔧","📚",
   "🍔","🍕","🍜","🍱","☕","🍰","🛍️","👗","👟","💄",
-  "🚗","🚌","⛽","✈️","🚲","🏠","💡","🔌","🧹","🛋️",
-  "🎮","🎬","🎵","🎉","🎨","❤️","💊","🏥","🩺","💪",
-  "🎓","📚","✏️","🧾","💳","📱","💧","⚡","🎁","📦",
+  "🚌","⛽","✈️","🚲","🏠","🔌","🧹","🛋️",
+  "🎬","🎵","🎉","🎨","❤️","💊","🩺","💪",
+  "🎓","✏️","💧","⚡","📦",
   "🏷️","💰","🐾","🧴","🐶"
 ];
 const WALLET_ICON_POOL = ["💵","🏦","💳","📱","💰","🐷","🪙","💎","🏧","👛"];
@@ -755,6 +779,7 @@ let state = {
   tanggal: todayStr(),
   dashboard: null,
   kategoriIconSel: KATEGORI_ICON_POOL[0],
+  kategoriTipeSel: "Pengeluaran",
   walletIconSel: WALLET_ICON_POOL[0],
   adjustMode: "tambah",
   adjustWalletNama: null,
@@ -821,15 +846,44 @@ function initTransaksiSheetUI(){
   if (!data) return;
 
   if (!state.dompet && data.wallets.length) state.dompet = data.wallets[0].nama;
-  if (!state.kategori && data.kategori.length) state.kategori = data.kategori[0].nama;
 
   const chipWrap = document.getElementById('dompetChips');
   chipWrap.innerHTML = data.wallets.map(w =>
     `<button class="chip ${w.nama===state.dompet?'active':''}" data-w="${w.nama}" onclick="setDompet('${escAttr(w.nama)}')">${w.icon} ${w.nama}</button>`
   ).join('') || '<span class="empty-note">Belum ada dompet, tambah dulu di menu Dompet</span>';
 
+  const availableKat = getKategoriForTipe(state.tipe);
+  if ((!state.kategori || !availableKat.some(c=>c.nama===state.kategori)) && availableKat.length){
+    state.kategori = availableKat[0].nama;
+  }
+  document.getElementById('kategoriSearchInput').value = '';
+  renderKategoriGridUI();
+
+  document.getElementById('tanggalInput').value = state.tanggal;
+  document.getElementById('tanggalDisplay').textContent = formatTanggalDisplay(state.tanggal);
+}
+function escAttr(s){ return String(s).replace(/'/g, "\\'"); }
+
+// Kategori dengan tipe "Keduanya" (mis. Transfer Antarkas) muncul baik
+// saat mencatat Pemasukan maupun Pengeluaran.
+function getKategoriForTipe(tipe){
+  const data = state.dashboard;
+  if (!data) return [];
+  return data.kategori.filter(function(c){
+    const t = c.tipe || 'Pengeluaran';
+    return t === 'Keduanya' || t === tipe;
+  });
+}
+
+function renderKategoriGridUI(){
+  const q = (document.getElementById('kategoriSearchInput').value || '').trim().toLowerCase();
+  let list = getKategoriForTipe(state.tipe);
+  if (q) list = list.filter(c => c.nama.toLowerCase().indexOf(q) !== -1);
+
   const katGrid = document.getElementById('kategoriGrid');
-  katGrid.innerHTML = data.kategori.map(c =>
+  const emptyMsg = list.length === 0
+    ? `<div class="empty-note" style="grid-column:1/-1;">Kategori "${q}" tidak ditemukan.</div>` : '';
+  katGrid.innerHTML = emptyMsg + list.map(c =>
     `<button class="kat-item ${c.nama===state.kategori?'active':''}" data-k="${escAttr(c.nama)}" onclick="setKategori('${escAttr(c.nama)}')">
        <div class="kat-ic">${c.icon}</div><span>${c.nama}</span>
      </button>`
@@ -837,11 +891,7 @@ function initTransaksiSheetUI(){
     <button class="kat-item add" onclick="openKategoriSheet()">
       <div class="kat-ic">+</div><span>Tambah</span>
     </button>`;
-
-  document.getElementById('tanggalInput').value = state.tanggal;
-  document.getElementById('tanggalDisplay').textContent = formatTanggalDisplay(state.tanggal);
 }
-function escAttr(s){ return String(s).replace(/'/g, "\\'"); }
 
 function setTipe(t){
   state.tipe = t;
@@ -849,8 +899,14 @@ function setTipe(t){
   document.getElementById('btnOut').classList.toggle('out', t==='Pengeluaran');
   document.getElementById('btnIn').classList.toggle('active', t==='Pemasukan');
   document.getElementById('btnIn').classList.toggle('in', t==='Pemasukan');
-  document.getElementById('katLabel').style.display = t==='Pemasukan' ? 'none' : 'block';
-  document.getElementById('kategoriGrid').style.display = t==='Pemasukan' ? 'none' : 'grid';
+  document.getElementById('katLabel').textContent = t==='Pemasukan' ? 'Kategori Pemasukan' : 'Kategori Pengeluaran';
+
+  const availableKat = getKategoriForTipe(t);
+  if (!availableKat.some(c=>c.nama===state.kategori)){
+    state.kategori = availableKat.length ? availableKat[0].nama : null;
+  }
+  document.getElementById('kategoriSearchInput').value = '';
+  renderKategoriGridUI();
 }
 function setDompet(w){
   state.dompet = w;
@@ -893,12 +949,19 @@ function openKategoriSheet(){
   state.kategoriIconSel = KATEGORI_ICON_POOL[0];
   document.getElementById('kategoriNamaInput').value = "";
   renderIconPicker('kategoriIconPicker', KATEGORI_ICON_POOL, state.kategoriIconSel, 'pickKategoriIcon');
+  setKategoriTipeSel(state.tipe === 'Pemasukan' ? 'Pemasukan' : 'Pengeluaran');
   document.getElementById('overlay2').classList.add('show');
   document.getElementById('sheetKategori').classList.add('show');
 }
 function closeKategoriSheet(){
   document.getElementById('overlay2').classList.remove('show');
   document.getElementById('sheetKategori').classList.remove('show');
+}
+function setKategoriTipeSel(t){
+  state.kategoriTipeSel = t;
+  document.querySelectorAll('#kategoriTipeChips .chip').forEach(el=>{
+    el.classList.toggle('active', el.dataset.t === t);
+  });
 }
 function pickKategoriIcon(ic){
   state.kategoriIconSel = ic;
@@ -1488,8 +1551,9 @@ function renderLaporanView(data){
 /* ---------------- LAPORAN: BUDGET SHEET ---------------- */
 function openBudgetSheet(kategoriNama){
   const data = state.dashboard;
-  if (!data || !data.kategori.length){ showToast("Tambahkan kategori dulu ya"); return; }
-  state.budgetKategoriSel = kategoriNama || data.kategori[0].nama;
+  const kats = getKategoriForTipe('Pengeluaran');
+  if (!data || !kats.length){ showToast("Tambahkan kategori pengeluaran dulu ya"); return; }
+  state.budgetKategoriSel = kategoriNama || kats[0].nama;
   renderBudgetKategoriChips();
   const existing = (data.budget || []).find(b => b.kategori === state.budgetKategoriSel);
   document.getElementById('budgetJumlahInput').value = existing ? Number(existing.jumlah).toLocaleString('id-ID') : '';
@@ -1501,8 +1565,8 @@ function closeBudgetSheet(){
   document.getElementById('sheetBudget').classList.remove('show');
 }
 function renderBudgetKategoriChips(){
-  const data = state.dashboard;
-  document.getElementById('budgetKategoriChips').innerHTML = data.kategori.map(c =>
+  const kats = getKategoriForTipe('Pengeluaran');
+  document.getElementById('budgetKategoriChips').innerHTML = kats.map(c =>
     `<button class="chip ${c.nama===state.budgetKategoriSel?'active':''}" onclick="setBudgetKategoriSel('${escAttr(c.nama)}')">${c.icon} ${c.nama}</button>`
   ).join('');
 }
@@ -1532,6 +1596,47 @@ async function submitBudget(){
     btn.disabled = false;
     btn.textContent = "Simpan Budget";
   }
+}
+
+/* ---------------- RINGKASAN PEMASUKAN / PENGELUARAN (klik hero) ---------------- */
+function openRingkasanSheet(tipe){
+  const data = state.dashboard;
+  if (!data) return;
+  const isIn = tipe === 'Pemasukan';
+  const total = isIn ? data.bulanIni.pemasukan : data.bulanIni.pengeluaran;
+  const byCat = (isIn ? data.bulanIni.byCategoryPemasukan : data.bulanIni.byCategory) || [];
+
+  document.getElementById('ringkasanTitle').textContent = isIn ? '💰 Sumber Pemasukan Bulan Ini' : '🧾 Rincian Pengeluaran Bulan Ini';
+  const totalEl = document.getElementById('ringkasanTotal');
+  totalEl.textContent = formatRupiah(total);
+  totalEl.style.color = isIn ? 'var(--green)' : 'var(--red)';
+
+  const listEl = document.getElementById('ringkasanList');
+  if (!byCat.length){
+    listEl.innerHTML = `<div class="empty-note">Belum ada ${isIn?'pemasukan':'pengeluaran'} tercatat bulan ini.</div>`;
+  } else {
+    listEl.innerHTML = byCat.map(function(c, i){
+      const barColor = isIn ? 'var(--green)' : DONUT_COLORS[i % DONUT_COLORS.length];
+      return `
+      <div class="budget-row">
+        <div class="budget-row-head">
+          <span>${c.icon} ${c.kategori}</span>
+          <span>${formatRupiah(c.jumlah)}</span>
+        </div>
+        <div class="budget-bar-track">
+          <div class="budget-bar-fill" style="width:${c.persen}%;background:${barColor};"></div>
+        </div>
+        <div class="budget-row-sub">${c.persen}% dari total</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('overlay6').classList.add('show');
+  document.getElementById('sheetRingkasan').classList.add('show');
+}
+function closeRingkasanSheet(){
+  document.getElementById('overlay6').classList.remove('show');
+  document.getElementById('sheetRingkasan').classList.remove('show');
 }
 
 /* ---------------- MASTER RENDER ---------------- */
@@ -1583,6 +1688,7 @@ async function submitTransaksi(){
   const jumlah = Number(raw);
   if (!jumlah || jumlah <= 0){ showToast("Isi nominal transaksi dulu ya"); return; }
   if (!state.dompet){ showToast("Pilih dompet dulu ya"); return; }
+  if (!state.kategori){ showToast("Pilih kategori dulu ya"); return; }
   if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
 
   const btn = document.getElementById('saveBtn');
@@ -1595,7 +1701,7 @@ async function submitTransaksi(){
       tipe: state.tipe,
       jumlah: jumlah,
       dompet: state.dompet,
-      kategori: state.tipe === 'Pemasukan' ? 'Pemasukan' : state.kategori,
+      kategori: state.kategori,
       catatan: document.getElementById('catatanInput').value.trim(),
       tanggal: document.getElementById('tanggalInput').value || state.tanggal
     };
@@ -1623,7 +1729,7 @@ async function submitKategori(){
   btn.disabled = true;
   btn.textContent = "Menyimpan...";
   try {
-    const data = await postAction({ action:"addKategori", nama, icon: state.kategoriIconSel });
+    const data = await postAction({ action:"addKategori", nama, icon: state.kategoriIconSel, tipe: state.kategoriTipeSel });
     renderAll(data);
     state.kategori = nama;
     showToast("Kategori ditambahkan ✅");
@@ -1703,7 +1809,7 @@ async function refreshDashboard(showFeedback){
     document.getElementById('configBanner').style.display = 'block';
     renderAll({
       saldoTotal:0, wallets:[], kategori:[],
-      bulanIni:{pemasukan:0,pengeluaran:0,byCategory:[]},
+      bulanIni:{pemasukan:0,pengeluaran:0,byCategory:[],byCategoryPemasukan:[]},
       transaksiCount:0, riwayat:[], budget:[]
     });
     return;
