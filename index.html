@@ -384,6 +384,52 @@
   .line-chart-tooltip .ttl{font-weight:800;margin-bottom:4px;font-size:11px;}
   .line-chart-tooltip .row{display:flex;align-items:center;gap:6px;margin-top:3px;}
   .line-chart-tooltip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+  /* ---------- MENU UTAMA ---------- */
+  .menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+  .menu-item{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;
+    box-shadow:var(--shadow);border:none;
+  }
+  .menu-item .ic-box{width:38px;height:38px;border-radius:12px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .menu-item span{font-size:11px;font-weight:700;color:var(--ink);text-align:center;}
+
+  /* ---------- SUBVIEW HEADER (Jualan/Investasi/Uang Mama) ---------- */
+  .back-row{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px 0;}
+  .back-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .back-row .page-head{padding:0;flex:1;}
+
+  /* ---------- MINI STAT GRID ---------- */
+  .mini-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+  .mini-stat{background:var(--card);border-radius:14px;padding:11px 6px;text-align:center;box-shadow:var(--shadow);}
+  .mini-stat .k{font-size:9px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:0.02em;}
+  .mini-stat .v{font-size:12.5px;font-weight:800;margin-top:5px;color:var(--ink);}
+  .mini-stat .v.pos{color:var(--green);}
+  .mini-stat .v.neg{color:var(--red);}
+
+  /* ---------- GENERIC LIST ROW (produk / instrumen / uang mama) ---------- */
+  .list-row{background:var(--card);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);margin-bottom:10px;}
+  .list-row-ic{width:42px;height:42px;border-radius:13px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .list-row-mid{flex:1;min-width:0;}
+  .list-row-name{font-size:13.5px;font-weight:800;color:var(--ink);}
+  .list-row-sub{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+  .list-row-right{text-align:right;flex-shrink:0;}
+  .list-row-amt{font-size:13.5px;font-weight:800;}
+  .list-row-amt.pos{color:var(--green);}
+  .list-row-amt.neg{color:var(--red);}
+  .list-row-sub2{font-size:10px;color:var(--ink-soft);font-weight:600;margin-top:2px;}
+
+  .detail-log-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .detail-log-row:last-child{border-bottom:none;}
+  .detail-log-mid{flex:1;min-width:0;font-size:12px;color:var(--ink);font-weight:700;}
+  .detail-log-sub{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:1px;}
+  .detail-log-amt{font-size:12.5px;font-weight:800;flex-shrink:0;}
+  .detail-log-del{background:none;border:none;color:var(--ink-soft);font-size:13px;padding:2px 0 2px 6px;flex-shrink:0;}
+
+  .tab-row-sm{display:flex;background:#f6e9ed;border-radius:12px;padding:4px;margin-bottom:14px;}
+  .tab-row-sm button{flex:1;border:none;background:none;padding:8px 0;border-radius:9px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .tab-row-sm button.active{background:#fff;color:var(--accent);box-shadow:0 4px 10px -4px rgba(60,20,80,0.25);}
 </style>
 </head>
 <body>
@@ -432,6 +478,19 @@
       <div class="insight" id="insightBox">
         <span class="ic">✨</span>
         <span id="insightText">Memuat insight keuanganmu…</span>
+      </div>
+
+      <div class="section-title">Menu Utama</div>
+      <div class="menu-grid">
+        <button class="menu-item" onclick="goJualan()">
+          <div class="ic-box">🛍️</div><span>Jualan</span>
+        </button>
+        <button class="menu-item" onclick="goInvestasi()">
+          <div class="ic-box">📈</div><span>Investasi</span>
+        </button>
+        <button class="menu-item" onclick="goUangMama()">
+          <div class="ic-box">👛</div><span>Uang Mama</span>
+        </button>
       </div>
 
       <div class="section-title">Aktivitas Bulan Ini</div>
@@ -581,6 +640,63 @@
       <div class="insight" id="lapComparisonInsight">
         <span class="ic">📈</span>
         <span id="lapComparisonText">Memuat perbandingan…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VIEW: JUALAN ================= -->
+  <div class="view" id="viewJualan">
+    <div class="back-row">
+      <button class="back-btn" onclick="switchView('beranda')">‹</button>
+      <div class="page-head">
+        <h1>Jualan</h1>
+        <p>Catat produk, modal, dan penjualanmu</p>
+      </div>
+      <button class="round-add-btn" onclick="openProdukSheet()">+</button>
+    </div>
+    <div class="content" style="padding-top:6px;">
+      <div class="mini-stat-grid" id="jualanRingkasan"></div>
+      <div class="section-title" style="margin-top:20px;">Produk Jualan</div>
+      <div id="jualanProdukList"></div>
+    </div>
+  </div>
+
+  <!-- ================= VIEW: INVESTASI ================= -->
+  <div class="view" id="viewInvestasi">
+    <div class="back-row">
+      <button class="back-btn" onclick="switchView('beranda')">‹</button>
+      <div class="page-head">
+        <h1>Investasi</h1>
+        <p>Pantau instrumen investasimu</p>
+      </div>
+      <button class="round-add-btn" onclick="openInstrumenSheet()">+</button>
+    </div>
+    <div class="content" style="padding-top:6px;">
+      <div class="mini-stat-grid" id="investasiRingkasan"></div>
+      <div class="section-title" style="margin-top:20px;">Instrumen</div>
+      <div id="investasiList"></div>
+    </div>
+  </div>
+
+  <!-- ================= VIEW: UANG MAMA ================= -->
+  <div class="view" id="viewUangmama">
+    <div class="back-row">
+      <button class="back-btn" onclick="switchView('beranda')">‹</button>
+      <div class="page-head">
+        <h1>Uang Mama</h1>
+        <p>Kelola titipan tabungan mama</p>
+      </div>
+      <button class="round-add-btn" onclick="openUangMamaSheet()">+</button>
+    </div>
+    <div class="content" style="padding-top:6px;">
+      <div class="hero-card" style="margin:0;">
+        <div class="hero-label">👛 Saldo Titipan Mama</div>
+        <div class="hero-amount" id="uangMamaSaldo">Rp 0</div>
+        <p class="hero-sub">Total saldo terakhir</p>
+      </div>
+      <div class="section-title">Riwayat Keluar Masuk</div>
+      <div class="card riwayat-card" style="margin-top:0;">
+        <div id="uangMamaList"></div>
       </div>
     </div>
   </div>
@@ -746,6 +862,222 @@
   </div>
 </div>
 
+<!-- ============ SHEET: TAMBAH PRODUK JUALAN ============ -->
+<div class="overlay" id="overlay7" onclick="closeProdukSheet()"></div>
+<div class="sheet" id="sheetProduk">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeProdukSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title">Produk Jualan Baru</p>
+    <div class="field-label" style="margin-top:0;">Nama Produk</div>
+    <input class="text-input" id="produkNamaInput" placeholder="Contoh: Kue Kering Lebaran">
+    <div class="field-label">Rencana Harga Jual (per pcs)</div>
+    <div class="date-field" style="border:1.5px solid var(--line);">
+      <span style="font-weight:700;color:var(--ink-soft);">Rp</span>
+      <input type="text" inputmode="numeric" id="produkRencanaHargaInput" placeholder="0" oninput="formatAmount(this)" style="border:none;outline:none;flex:1;font-size:14px;font-weight:700;font-family:inherit;">
+    </div>
+    <div class="field-label">Modal Awal (opsional)</div>
+    <div class="date-field" style="border:1.5px solid var(--line);">
+      <span style="font-weight:700;color:var(--ink-soft);">Rp</span>
+      <input type="text" inputmode="numeric" id="produkModalAwalInput" placeholder="0" oninput="formatAmount(this)" style="border:none;outline:none;flex:1;font-size:14px;font-weight:700;font-family:inherit;">
+    </div>
+    <div class="field-label">Catatan (opsional)</div>
+    <input class="catatan-input" id="produkCatatanInput" placeholder="Contoh: Jualan musiman" style="margin-top:0;">
+    <button class="save-btn" id="saveProdukBtn" onclick="submitProduk()">Simpan Produk</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: DETAIL PRODUK JUALAN ============ -->
+<div class="overlay" id="overlay8" onclick="closeProdukDetailSheet()"></div>
+<div class="sheet" id="sheetProdukDetail">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeProdukDetailSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="produkDetailTitle">Produk</p>
+    <div class="mini-stat-grid" id="produkDetailStats"></div>
+    <div class="tab-row-sm" style="margin-top:16px;">
+      <button class="active" id="pdTabModal" onclick="setProdukDetailTab('modal')">Log Modal</button>
+      <button id="pdTabPenjualan" onclick="setProdukDetailTab('penjualan')">Log Penjualan</button>
+    </div>
+    <div id="produkDetailLog"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="save-btn" style="margin-top:0;" onclick="openTambahModalSheet()">+ Modal</button>
+      <button class="save-btn lime" style="margin-top:0;" onclick="openCatatPenjualanSheet()">+ Penjualan</button>
+    </div>
+    <button class="save-btn" style="margin-top:10px;background:#f6e9ed;color:var(--red);box-shadow:none;" onclick="confirmDeleteProduk()">Hapus Produk Ini</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: TAMBAH MODAL ============ -->
+<div class="overlay" id="overlay9" onclick="closeTambahModalSheet()"></div>
+<div class="sheet" id="sheetTambahModal">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeTambahModalSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="tambahModalTitle">Tambah Modal</p>
+    <div class="amount-row">
+      <span class="rp">Rp</span>
+      <input type="text" inputmode="numeric" id="tambahModalJumlahInput" placeholder="0" oninput="formatAmount(this)">
+    </div>
+    <div class="field-label">Tanggal</div>
+    <div class="date-field">
+      <span class="date-ic">📅</span>
+      <span id="tambahModalTanggalDisplay">Hari ini</span>
+      <input type="date" id="tambahModalTanggalInput" oninput="onGenericTanggalChange('tambahModal')">
+    </div>
+    <div class="field-label">Catatan (opsional)</div>
+    <input class="catatan-input" id="tambahModalCatatanInput" placeholder="Contoh: Beli bahan baku" style="margin-top:0;">
+    <button class="save-btn" id="saveTambahModalBtn" onclick="submitTambahModal()">Simpan Modal</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: CATAT PENJUALAN ============ -->
+<div class="overlay" id="overlay10" onclick="closeCatatPenjualanSheet()"></div>
+<div class="sheet" id="sheetCatatPenjualan">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeCatatPenjualanSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="catatPenjualanTitle">Catat Penjualan</p>
+    <div class="field-label" style="margin-top:0;">Jumlah Terjual (pcs)</div>
+    <input class="text-input" type="text" inputmode="numeric" id="penjualanQtyInput" placeholder="0" oninput="formatAmount(this)">
+    <div class="field-label">Harga Jual (per pcs)</div>
+    <div class="date-field" style="border:1.5px solid var(--line);">
+      <span style="font-weight:700;color:var(--ink-soft);">Rp</span>
+      <input type="text" inputmode="numeric" id="penjualanHargaInput" placeholder="0" oninput="formatAmount(this)" style="border:none;outline:none;flex:1;font-size:14px;font-weight:700;font-family:inherit;">
+    </div>
+    <div class="field-label">Tanggal</div>
+    <div class="date-field">
+      <span class="date-ic">📅</span>
+      <span id="penjualanTanggalDisplay">Hari ini</span>
+      <input type="date" id="penjualanTanggalInput" oninput="onGenericTanggalChange('penjualan')">
+    </div>
+    <div class="field-label">Catatan (opsional)</div>
+    <input class="catatan-input" id="penjualanCatatanInput" placeholder="Contoh: Laku 5 box ke tetangga" style="margin-top:0;">
+    <button class="save-btn lime" id="savePenjualanBtn" onclick="submitPenjualan()">Simpan Penjualan</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: TAMBAH INSTRUMEN INVESTASI ============ -->
+<div class="overlay" id="overlay11" onclick="closeInstrumenSheet()"></div>
+<div class="sheet" id="sheetInstrumen">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeInstrumenSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title">Instrumen Investasi Baru</p>
+    <div class="field-label" style="margin-top:0;">Nama Instrumen</div>
+    <input class="text-input" id="instrumenNamaInput" placeholder="Contoh: Bitcoin, BBCA, Emas Antam">
+    <div class="field-label">Tipe</div>
+    <div class="chip-row" id="instrumenTipeChips">
+      <button class="chip active" data-t="Crypto" onclick="setInstrumenTipe('Crypto')">🪙 Crypto</button>
+      <button class="chip" data-t="Saham" onclick="setInstrumenTipe('Saham')">📊 Saham</button>
+      <button class="chip" data-t="Reksadana" onclick="setInstrumenTipe('Reksadana')">📁 Reksadana</button>
+      <button class="chip" data-t="Emas" onclick="setInstrumenTipe('Emas')">🪙 Emas</button>
+      <button class="chip" data-t="Lainnya" onclick="setInstrumenTipe('Lainnya')">📈 Lainnya</button>
+    </div>
+    <div class="field-label">Harga Sekarang (per unit)</div>
+    <div class="date-field" style="border:1.5px solid var(--line);">
+      <span style="font-weight:700;color:var(--ink-soft);">Rp</span>
+      <input type="text" inputmode="numeric" id="instrumenHargaSekarangInput" placeholder="0" oninput="formatAmount(this)" style="border:none;outline:none;flex:1;font-size:14px;font-weight:700;font-family:inherit;">
+    </div>
+    <div class="field-label">Posisi Awal (opsional)</div>
+    <div style="display:flex;gap:8px;">
+      <input class="text-input" type="text" inputmode="numeric" id="instrumenQtyAwalInput" placeholder="Qty dimiliki" oninput="formatAmount(this)">
+      <input class="text-input" type="text" inputmode="numeric" id="instrumenHargaBeliAwalInput" placeholder="Harga beli/unit" oninput="formatAmount(this)">
+    </div>
+    <button class="save-btn" id="saveInstrumenBtn" onclick="submitInstrumen()">Simpan Instrumen</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: DETAIL INSTRUMEN INVESTASI ============ -->
+<div class="overlay" id="overlay12" onclick="closeInstrumenDetailSheet()"></div>
+<div class="sheet" id="sheetInstrumenDetail">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeInstrumenDetailSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="instrumenDetailTitle">Instrumen</p>
+    <div class="mini-stat-grid" id="instrumenDetailStats"></div>
+    <div class="section-title" style="margin:16px 2px 6px;">Riwayat Transaksi</div>
+    <div id="instrumenDetailLog"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="save-btn" style="margin-top:0;" onclick="openInvestasiTransaksiSheet()">+ Transaksi</button>
+      <button class="save-btn lime" style="margin-top:0;" onclick="openUpdateHargaSheet()">Update Harga</button>
+    </div>
+    <button class="save-btn" style="margin-top:10px;background:#f6e9ed;color:var(--red);box-shadow:none;" onclick="confirmDeleteInstrumen()">Hapus Instrumen Ini</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: TRANSAKSI INVESTASI (BELI/JUAL) ============ -->
+<div class="overlay" id="overlay13" onclick="closeInvestasiTransaksiSheet()"></div>
+<div class="sheet" id="sheetInvestasiTransaksi">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeInvestasiTransaksiSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="investasiTransaksiTitle">Transaksi</p>
+    <div class="type-toggle">
+      <button class="active out" id="btnInvBeli" onclick="setInvestasiTipe('Beli')">Beli</button>
+      <button id="btnInvJual" onclick="setInvestasiTipe('Jual')">Jual</button>
+    </div>
+    <div class="field-label" style="margin-top:0;">Jumlah (unit)</div>
+    <input class="text-input" type="text" inputmode="numeric" id="invTransQtyInput" placeholder="0" oninput="formatAmount(this)">
+    <div class="field-label">Harga per Unit</div>
+    <div class="date-field" style="border:1.5px solid var(--line);">
+      <span style="font-weight:700;color:var(--ink-soft);">Rp</span>
+      <input type="text" inputmode="numeric" id="invTransHargaInput" placeholder="0" oninput="formatAmount(this)" style="border:none;outline:none;flex:1;font-size:14px;font-weight:700;font-family:inherit;">
+    </div>
+    <div class="field-label">Tanggal</div>
+    <div class="date-field">
+      <span class="date-ic">📅</span>
+      <span id="invTransTanggalDisplay">Hari ini</span>
+      <input type="date" id="invTransTanggalInput" oninput="onGenericTanggalChange('invTrans')">
+    </div>
+    <div class="field-label">Catatan (opsional)</div>
+    <input class="catatan-input" id="invTransCatatanInput" placeholder="Contoh: DCA bulanan" style="margin-top:0;">
+    <button class="save-btn" id="saveInvTransBtn" onclick="submitInvestasiTransaksi()">Simpan Transaksi</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: UPDATE HARGA INSTRUMEN ============ -->
+<div class="overlay" id="overlay14" onclick="closeUpdateHargaSheet()"></div>
+<div class="sheet" id="sheetUpdateHarga">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeUpdateHargaSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="updateHargaTitle">Update Harga</p>
+    <div class="amount-row">
+      <span class="rp">Rp</span>
+      <input type="text" inputmode="numeric" id="updateHargaInput" placeholder="0" oninput="formatAmount(this)">
+    </div>
+    <button class="save-btn lime" id="saveUpdateHargaBtn" onclick="submitUpdateHarga()">Simpan Harga</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: UANG MAMA (TAMBAH TRANSAKSI) ============ -->
+<div class="overlay" id="overlay15" onclick="closeUangMamaSheet()"></div>
+<div class="sheet" id="sheetUangMama">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeUangMamaSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title">Catat Uang Mama</p>
+    <div class="type-toggle">
+      <button class="active in" id="btnUmMasuk" onclick="setUangMamaTipe('Masuk')">Masuk</button>
+      <button id="btnUmKeluar" onclick="setUangMamaTipe('Keluar')">Keluar</button>
+    </div>
+    <div class="amount-row">
+      <span class="rp">Rp</span>
+      <input type="text" inputmode="numeric" id="uangMamaJumlahInput" placeholder="0" oninput="formatAmount(this)">
+    </div>
+    <div class="field-label">Tanggal</div>
+    <div class="date-field">
+      <span class="date-ic">📅</span>
+      <span id="uangMamaTanggalDisplay">Hari ini</span>
+      <input type="date" id="uangMamaTanggalInput" oninput="onGenericTanggalChange('uangMama')">
+    </div>
+    <div class="field-label">Catatan (opsional)</div>
+    <input class="catatan-input" id="uangMamaCatatanInput" placeholder="Contoh: Belanja bulanan mama" style="margin-top:0;">
+    <button class="save-btn lime" id="saveUangMamaBtn" onclick="submitUangMama()">Simpan</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -785,7 +1117,18 @@ let state = {
   adjustWalletNama: null,
   report: { filter: "bulanIni", customFrom: "", customTo: "", expandedKategori: null },
   budgetKategoriSel: null,
-  aktivitasMonthOffset: 0
+  aktivitasMonthOffset: 0,
+
+  // --- Menu Utama tambahan ---
+  jualan: null,
+  investasi: null,
+  uangMama: null,
+  selectedProdukId: null,
+  produkDetailTab: "modal",
+  selectedInstrumenId: null,
+  invTransTipe: "Beli",
+  uangMamaTipe: "Masuk",
+  genericTanggal: { tambahModal: todayStr(), penjualan: todayStr(), invTrans: todayStr(), uangMama: todayStr() }
 };
 
 const LAP_FILTERS = [
@@ -829,14 +1172,19 @@ function formatTanggalDisplay(str){
 }
 
 /* ---------------- VIEW SWITCH ---------------- */
+const ALL_VIEWS = ["beranda","dompet","riwayat","laporan","jualan","investasi","uangmama"];
+const NAV_VIEWS = ["beranda","dompet","riwayat","laporan"];
 function switchView(v){
   state.view = v;
-  ["beranda","dompet","riwayat","laporan"].forEach(name=>{
-    document.getElementById("view" + capitalize(name)).classList.toggle("active", name===v);
+  ALL_VIEWS.forEach(name=>{
+    const el = document.getElementById("view" + capitalize(name));
+    if (el) el.classList.toggle("active", name===v);
+  });
+  NAV_VIEWS.forEach(name=>{
     const nav = document.getElementById("nav" + capitalize(name));
     if (nav) nav.classList.toggle("active", name===v);
   });
-  if (state.dashboard) renderCurrentView();
+  if (NAV_VIEWS.includes(v) && state.dashboard) renderCurrentView();
 }
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -925,6 +1273,15 @@ function onTanggalChange(){
   if (!val) return;
   state.tanggal = val;
   document.getElementById('tanggalDisplay').textContent = formatTanggalDisplay(val);
+}
+
+// Handler tanggal generik untuk sheet-sheet Jualan/Investasi/Uang Mama.
+// key salah satu dari: tambahModal, penjualan, invTrans, uangMama
+function onGenericTanggalChange(key){
+  const val = document.getElementById(key + 'TanggalInput').value;
+  if (!val) return;
+  state.genericTanggal[key] = val;
+  document.getElementById(key + 'TanggalDisplay').textContent = formatTanggalDisplay(val);
 }
 
 /* ---------------- SHEET OPEN/CLOSE ---------------- */
@@ -1036,6 +1393,12 @@ async function postAction(payload){
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error || "Gagal menyimpan data");
+  return json.data;
+}
+async function fetchAction(action){
+  const res = await fetch(SCRIPT_URL + "?action=" + action);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || "Gagal memuat data");
   return json.data;
 }
 
@@ -1796,6 +2159,529 @@ async function submitAdjust(){
     btn.disabled = false;
     btn.textContent = "Simpan Perubahan Saldo";
   }
+}
+
+/* =====================================================================
+   MENU UTAMA TAMBAHAN: JUALAN
+===================================================================== */
+async function goJualan(){
+  switchView('jualan');
+  document.getElementById('jualanRingkasan').innerHTML = skeletonMiniStats_();
+  document.getElementById('jualanProdukList').innerHTML = '<div class="empty-note">Memuat…</div>';
+  try {
+    const data = await fetchAction('jualan');
+    state.jualan = data;
+    renderJualanView(data);
+  } catch(err){ showToast("Gagal memuat data Jualan: " + err.message); }
+}
+function skeletonMiniStats_(){
+  return '<div class="mini-stat"><div class="skeleton" style="height:26px;border-radius:8px;"></div></div>'.repeat(3);
+}
+function renderJualanView(data){
+  const r = data.ringkasan;
+  document.getElementById('jualanRingkasan').innerHTML = `
+    <div class="mini-stat"><div class="k">Modal</div><div class="v">${formatRupiah(r.totalModal)}</div></div>
+    <div class="mini-stat"><div class="k">Pendapatan</div><div class="v">${formatRupiah(r.totalPendapatan)}</div></div>
+    <div class="mini-stat"><div class="k">Untung</div><div class="v ${r.totalKeuntungan>=0?'pos':'neg'}">${formatRupiah(r.totalKeuntungan)}</div></div>
+  `;
+  const list = document.getElementById('jualanProdukList');
+  if (!data.produk.length){
+    list.innerHTML = '<div class="empty-note">Belum ada produk jualan. Tap tombol + untuk menambahkan.</div>';
+    return;
+  }
+  list.innerHTML = data.produk.map(p => `
+    <div class="list-row" style="cursor:pointer;" onclick="openProdukDetailSheet('${p.id}')">
+      <div class="list-row-ic">🛍️</div>
+      <div class="list-row-mid">
+        <div class="list-row-name">${escHtml(p.nama)}</div>
+        <div class="list-row-sub">Modal ${formatRupiah(p.totalModal)} · Terjual ${p.totalTerjual} pcs</div>
+      </div>
+      <div class="list-row-right">
+        <div class="list-row-amt ${p.keuntungan>=0?'pos':'neg'}">${formatRupiah(p.keuntungan)}</div>
+        <div class="list-row-sub2">Rencana ${formatRupiah(p.rencanaHarga)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function openProdukSheet(){
+  document.getElementById('produkNamaInput').value = '';
+  document.getElementById('produkRencanaHargaInput').value = '';
+  document.getElementById('produkModalAwalInput').value = '';
+  document.getElementById('produkCatatanInput').value = '';
+  document.getElementById('overlay7').classList.add('show');
+  document.getElementById('sheetProduk').classList.add('show');
+}
+function closeProdukSheet(){
+  document.getElementById('overlay7').classList.remove('show');
+  document.getElementById('sheetProduk').classList.remove('show');
+}
+async function submitProduk(){
+  const nama = document.getElementById('produkNamaInput').value.trim();
+  if (!nama){ showToast("Isi nama produk dulu ya"); return; }
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const rencanaHarga = Number(document.getElementById('produkRencanaHargaInput').value.replace(/[^\d]/g,"")) || 0;
+  const modalAwal = Number(document.getElementById('produkModalAwalInput').value.replace(/[^\d]/g,"")) || 0;
+  const btn = document.getElementById('saveProdukBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({ action:"addProdukJualan", nama, rencanaHarga, modalAwal, catatan: document.getElementById('produkCatatanInput').value.trim(), tanggal: todayStr() });
+    state.jualan = data;
+    renderJualanView(data);
+    showToast("Produk ditambahkan ✅");
+    closeProdukSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan Produk"; }
+}
+
+function openProdukDetailSheet(produkId){
+  state.selectedProdukId = produkId;
+  state.produkDetailTab = 'modal';
+  renderProdukDetailSheet();
+  document.getElementById('overlay8').classList.add('show');
+  document.getElementById('sheetProdukDetail').classList.add('show');
+}
+function closeProdukDetailSheet(){
+  document.getElementById('overlay8').classList.remove('show');
+  document.getElementById('sheetProdukDetail').classList.remove('show');
+}
+function setProdukDetailTab(tab){
+  state.produkDetailTab = tab;
+  renderProdukDetailSheet();
+}
+function renderProdukDetailSheet(){
+  const data = state.jualan;
+  if (!data) return;
+  const p = data.produk.find(x => x.id === state.selectedProdukId);
+  if (!p) { closeProdukDetailSheet(); return; }
+  document.getElementById('produkDetailTitle').textContent = p.nama;
+  document.getElementById('produkDetailStats').innerHTML = `
+    <div class="mini-stat"><div class="k">Modal</div><div class="v">${formatRupiah(p.totalModal)}</div></div>
+    <div class="mini-stat"><div class="k">Pendapatan</div><div class="v">${formatRupiah(p.totalPendapatan)}</div></div>
+    <div class="mini-stat"><div class="k">Untung</div><div class="v ${p.keuntungan>=0?'pos':'neg'}">${formatRupiah(p.keuntungan)}</div></div>
+  `;
+  document.getElementById('pdTabModal').classList.toggle('active', state.produkDetailTab==='modal');
+  document.getElementById('pdTabPenjualan').classList.toggle('active', state.produkDetailTab==='penjualan');
+
+  const logEl = document.getElementById('produkDetailLog');
+  if (state.produkDetailTab === 'modal'){
+    const rows = data.modalEntries.filter(m => m.produkId === state.selectedProdukId);
+    logEl.innerHTML = rows.length ? rows.map(m => `
+      <div class="detail-log-row">
+        <div class="detail-log-mid">${escHtml(m.catatan||'Modal')}<div class="detail-log-sub">${formatTanggalDisplay(m.tanggal.slice(0,10))}</div></div>
+        <div class="detail-log-amt">${formatRupiah(m.jumlah)}</div>
+        <button class="detail-log-del" onclick="confirmDeleteModalJualan('${m.id}')">✕</button>
+      </div>
+    `).join('') : '<div class="empty-note">Belum ada log modal.</div>';
+  } else {
+    const rows = data.penjualanEntries.filter(m => m.produkId === state.selectedProdukId);
+    logEl.innerHTML = rows.length ? rows.map(m => `
+      <div class="detail-log-row">
+        <div class="detail-log-mid">${m.qty} pcs × ${formatRupiah(m.harga)}${m.catatan? ' — ' + escHtml(m.catatan):''}<div class="detail-log-sub">${formatTanggalDisplay(m.tanggal.slice(0,10))}</div></div>
+        <div class="detail-log-amt">${formatRupiah(m.pendapatan)}</div>
+        <button class="detail-log-del" onclick="confirmDeletePenjualan('${m.id}')">✕</button>
+      </div>
+    `).join('') : '<div class="empty-note">Belum ada log penjualan.</div>';
+  }
+}
+async function confirmDeleteProduk(){
+  const p = (state.jualan.produk||[]).find(x=>x.id===state.selectedProdukId);
+  if (!p) return;
+  if (!confirm(`Hapus produk "${p.nama}"? Semua log modal & penjualannya ikut terhapus.`)) return;
+  try {
+    const data = await postAction({ action:"deleteProdukJualan", id: state.selectedProdukId });
+    state.jualan = data;
+    renderJualanView(data);
+    closeProdukDetailSheet();
+    showToast("Produk dihapus");
+  } catch(err){ showToast("Gagal: " + err.message); }
+}
+async function confirmDeleteModalJualan(id){
+  if (!confirm("Hapus log modal ini?")) return;
+  try {
+    const data = await postAction({ action:"deleteModalJualan", id });
+    state.jualan = data;
+    renderJualanView(data);
+    renderProdukDetailSheet();
+    showToast("Log modal dihapus");
+  } catch(err){ showToast("Gagal: " + err.message); }
+}
+async function confirmDeletePenjualan(id){
+  if (!confirm("Hapus log penjualan ini?")) return;
+  try {
+    const data = await postAction({ action:"deletePenjualan", id });
+    state.jualan = data;
+    renderJualanView(data);
+    renderProdukDetailSheet();
+    showToast("Log penjualan dihapus");
+  } catch(err){ showToast("Gagal: " + err.message); }
+}
+
+function openTambahModalSheet(){
+  const p = state.jualan.produk.find(x=>x.id===state.selectedProdukId);
+  document.getElementById('tambahModalTitle').textContent = "Tambah Modal — " + (p?p.nama:'');
+  document.getElementById('tambahModalJumlahInput').value = '';
+  document.getElementById('tambahModalCatatanInput').value = '';
+  state.genericTanggal.tambahModal = todayStr();
+  document.getElementById('tambahModalTanggalInput').value = todayStr();
+  document.getElementById('tambahModalTanggalDisplay').textContent = 'Hari ini';
+  document.getElementById('overlay9').classList.add('show');
+  document.getElementById('sheetTambahModal').classList.add('show');
+}
+function closeTambahModalSheet(){
+  document.getElementById('overlay9').classList.remove('show');
+  document.getElementById('sheetTambahModal').classList.remove('show');
+}
+async function submitTambahModal(){
+  const jumlah = Number(document.getElementById('tambahModalJumlahInput').value.replace(/[^\d]/g,"")) || 0;
+  if (!jumlah){ showToast("Isi jumlah modal dulu ya"); return; }
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const btn = document.getElementById('saveTambahModalBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({
+      action:"addModalJualan", produkId: state.selectedProdukId, jumlah,
+      catatan: document.getElementById('tambahModalCatatanInput').value.trim(),
+      tanggal: state.genericTanggal.tambahModal
+    });
+    state.jualan = data;
+    renderJualanView(data);
+    renderProdukDetailSheet();
+    showToast("Modal ditambahkan ✅");
+    closeTambahModalSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan Modal"; }
+}
+
+function openCatatPenjualanSheet(){
+  const p = state.jualan.produk.find(x=>x.id===state.selectedProdukId);
+  document.getElementById('catatPenjualanTitle').textContent = "Catat Penjualan — " + (p?p.nama:'');
+  document.getElementById('penjualanQtyInput').value = '';
+  document.getElementById('penjualanHargaInput').value = p && p.rencanaHarga ? p.rencanaHarga.toLocaleString('id-ID') : '';
+  document.getElementById('penjualanCatatanInput').value = '';
+  state.genericTanggal.penjualan = todayStr();
+  document.getElementById('penjualanTanggalInput').value = todayStr();
+  document.getElementById('penjualanTanggalDisplay').textContent = 'Hari ini';
+  document.getElementById('overlay10').classList.add('show');
+  document.getElementById('sheetCatatPenjualan').classList.add('show');
+}
+function closeCatatPenjualanSheet(){
+  document.getElementById('overlay10').classList.remove('show');
+  document.getElementById('sheetCatatPenjualan').classList.remove('show');
+}
+async function submitPenjualan(){
+  const qty = Number(document.getElementById('penjualanQtyInput').value.replace(/[^\d]/g,"")) || 0;
+  const harga = Number(document.getElementById('penjualanHargaInput').value.replace(/[^\d]/g,"")) || 0;
+  if (!qty || !harga){ showToast("Isi jumlah & harga jual dulu ya"); return; }
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const btn = document.getElementById('savePenjualanBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({
+      action:"addPenjualan", produkId: state.selectedProdukId, qty, harga,
+      catatan: document.getElementById('penjualanCatatanInput').value.trim(),
+      tanggal: state.genericTanggal.penjualan
+    });
+    state.jualan = data;
+    renderJualanView(data);
+    renderProdukDetailSheet();
+    showToast("Penjualan tercatat ✅");
+    closeCatatPenjualanSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan Penjualan"; }
+}
+
+/* =====================================================================
+   MENU UTAMA TAMBAHAN: INVESTASI
+===================================================================== */
+async function goInvestasi(){
+  switchView('investasi');
+  document.getElementById('investasiRingkasan').innerHTML = skeletonMiniStats_();
+  document.getElementById('investasiList').innerHTML = '<div class="empty-note">Memuat…</div>';
+  try {
+    const data = await fetchAction('investasi');
+    state.investasi = data;
+    renderInvestasiView(data);
+  } catch(err){ showToast("Gagal memuat data Investasi: " + err.message); }
+}
+function renderInvestasiView(data){
+  const r = data.ringkasan;
+  document.getElementById('investasiRingkasan').innerHTML = `
+    <div class="mini-stat"><div class="k">Modal</div><div class="v">${formatRupiah(r.totalModal)}</div></div>
+    <div class="mini-stat"><div class="k">Nilai Kini</div><div class="v">${formatRupiah(r.totalNilaiSekarang)}</div></div>
+    <div class="mini-stat"><div class="k">Gain/Loss</div><div class="v ${r.totalGainLoss>=0?'pos':'neg'}">${formatRupiah(r.totalGainLoss)}</div></div>
+  `;
+  const list = document.getElementById('investasiList');
+  if (!data.instrumen.length){
+    list.innerHTML = '<div class="empty-note">Belum ada instrumen investasi. Tap tombol + untuk menambahkan.</div>';
+    return;
+  }
+  list.innerHTML = data.instrumen.map(ins => `
+    <div class="list-row" style="cursor:pointer;" onclick="openInstrumenDetailSheet('${ins.id}')">
+      <div class="list-row-ic">${ins.icon}</div>
+      <div class="list-row-mid">
+        <div class="list-row-name">${escHtml(ins.nama)}</div>
+        <div class="list-row-sub">${ins.tipe} · ${ins.qty} unit @ ${formatRupiah(ins.avgCost)}</div>
+      </div>
+      <div class="list-row-right">
+        <div class="list-row-amt ${ins.gainLoss>=0?'pos':'neg'}">${formatRupiah(ins.gainLoss)}</div>
+        <div class="list-row-sub2">${formatRupiah(ins.nilaiSekarang)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setInstrumenTipe(t){
+  state._instrumenTipeSel = t;
+  document.querySelectorAll('#instrumenTipeChips .chip').forEach(el=>{
+    el.classList.toggle('active', el.dataset.t === t);
+  });
+}
+function openInstrumenSheet(){
+  document.getElementById('instrumenNamaInput').value = '';
+  document.getElementById('instrumenHargaSekarangInput').value = '';
+  document.getElementById('instrumenQtyAwalInput').value = '';
+  document.getElementById('instrumenHargaBeliAwalInput').value = '';
+  setInstrumenTipe('Crypto');
+  document.getElementById('overlay11').classList.add('show');
+  document.getElementById('sheetInstrumen').classList.add('show');
+}
+function closeInstrumenSheet(){
+  document.getElementById('overlay11').classList.remove('show');
+  document.getElementById('sheetInstrumen').classList.remove('show');
+}
+const INSTRUMEN_ICON_BY_TIPE = { Crypto:'🪙', Saham:'📊', Reksadana:'📁', Emas:'🪙', Lainnya:'📈' };
+async function submitInstrumen(){
+  const nama = document.getElementById('instrumenNamaInput').value.trim();
+  if (!nama){ showToast("Isi nama instrumen dulu ya"); return; }
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const tipe = state._instrumenTipeSel || 'Lainnya';
+  const hargaSekarang = Number(document.getElementById('instrumenHargaSekarangInput').value.replace(/[^\d]/g,"")) || 0;
+  const qtyAwal = Number(document.getElementById('instrumenQtyAwalInput').value.replace(/[^\d]/g,"")) || 0;
+  const hargaBeliAwal = Number(document.getElementById('instrumenHargaBeliAwalInput').value.replace(/[^\d]/g,"")) || 0;
+  const btn = document.getElementById('saveInstrumenBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({
+      action:"addInstrumen", nama, tipe, icon: INSTRUMEN_ICON_BY_TIPE[tipe] || '📈',
+      hargaSekarang, qtyAwal, hargaBeliAwal, tanggal: todayStr()
+    });
+    state.investasi = data;
+    renderInvestasiView(data);
+    showToast("Instrumen ditambahkan ✅");
+    closeInstrumenSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan Instrumen"; }
+}
+
+function openInstrumenDetailSheet(id){
+  state.selectedInstrumenId = id;
+  renderInstrumenDetailSheet();
+  document.getElementById('overlay12').classList.add('show');
+  document.getElementById('sheetInstrumenDetail').classList.add('show');
+}
+function closeInstrumenDetailSheet(){
+  document.getElementById('overlay12').classList.remove('show');
+  document.getElementById('sheetInstrumenDetail').classList.remove('show');
+}
+function renderInstrumenDetailSheet(){
+  const data = state.investasi;
+  if (!data) return;
+  const ins = data.instrumen.find(x=>x.id===state.selectedInstrumenId);
+  if (!ins){ closeInstrumenDetailSheet(); return; }
+  document.getElementById('instrumenDetailTitle').textContent = ins.icon + ' ' + ins.nama;
+  document.getElementById('instrumenDetailStats').innerHTML = `
+    <div class="mini-stat"><div class="k">Qty</div><div class="v">${ins.qty}</div></div>
+    <div class="mini-stat"><div class="k">Avg Cost</div><div class="v">${formatRupiah(ins.avgCost)}</div></div>
+    <div class="mini-stat"><div class="k">Gain/Loss</div><div class="v ${ins.gainLoss>=0?'pos':'neg'}">${formatRupiah(ins.gainLoss)}</div></div>
+  `;
+  const rows = data.transaksi.filter(t=>t.instrumenId===state.selectedInstrumenId);
+  const logEl = document.getElementById('instrumenDetailLog');
+  logEl.innerHTML = rows.length ? rows.map(t => `
+    <div class="detail-log-row">
+      <div class="detail-log-mid">${t.tipe} ${t.qty} unit @ ${formatRupiah(t.harga)}${t.catatan? ' — ' + escHtml(t.catatan):''}<div class="detail-log-sub">${formatTanggalDisplay(t.tanggal.slice(0,10))}</div></div>
+      <div class="detail-log-amt" style="color:${t.tipe==='Beli'?'var(--red)':'var(--green)'};">${t.tipe==='Beli'?'-':'+'}${formatRupiah(t.qty*t.harga)}</div>
+      <button class="detail-log-del" onclick="confirmDeleteInvestasiTransaksi('${t.id}')">✕</button>
+    </div>
+  `).join('') : '<div class="empty-note">Belum ada transaksi.</div>';
+}
+async function confirmDeleteInstrumen(){
+  const ins = (state.investasi.instrumen||[]).find(x=>x.id===state.selectedInstrumenId);
+  if (!ins) return;
+  if (!confirm(`Hapus instrumen "${ins.nama}"? Semua riwayat transaksinya ikut terhapus.`)) return;
+  try {
+    const data = await postAction({ action:"deleteInstrumen", id: state.selectedInstrumenId });
+    state.investasi = data;
+    renderInvestasiView(data);
+    closeInstrumenDetailSheet();
+    showToast("Instrumen dihapus");
+  } catch(err){ showToast("Gagal: " + err.message); }
+}
+async function confirmDeleteInvestasiTransaksi(id){
+  if (!confirm("Hapus transaksi ini?")) return;
+  try {
+    const data = await postAction({ action:"deleteInvestasiTransaksi", id });
+    state.investasi = data;
+    renderInvestasiView(data);
+    renderInstrumenDetailSheet();
+    showToast("Transaksi dihapus");
+  } catch(err){ showToast("Gagal: " + err.message); }
+}
+
+function openInvestasiTransaksiSheet(){
+  const ins = state.investasi.instrumen.find(x=>x.id===state.selectedInstrumenId);
+  document.getElementById('investasiTransaksiTitle').textContent = "Transaksi — " + (ins?ins.nama:'');
+  document.getElementById('invTransQtyInput').value = '';
+  document.getElementById('invTransHargaInput').value = ins && ins.hargaSekarang ? ins.hargaSekarang.toLocaleString('id-ID') : '';
+  document.getElementById('invTransCatatanInput').value = '';
+  setInvestasiTipe('Beli');
+  state.genericTanggal.invTrans = todayStr();
+  document.getElementById('invTransTanggalInput').value = todayStr();
+  document.getElementById('invTransTanggalDisplay').textContent = 'Hari ini';
+  document.getElementById('overlay13').classList.add('show');
+  document.getElementById('sheetInvestasiTransaksi').classList.add('show');
+}
+function closeInvestasiTransaksiSheet(){
+  document.getElementById('overlay13').classList.remove('show');
+  document.getElementById('sheetInvestasiTransaksi').classList.remove('show');
+}
+function setInvestasiTipe(t){
+  state.invTransTipe = t;
+  document.getElementById('btnInvBeli').classList.toggle('active', t==='Beli');
+  document.getElementById('btnInvBeli').classList.toggle('out', t==='Beli');
+  document.getElementById('btnInvJual').classList.toggle('active', t==='Jual');
+  document.getElementById('btnInvJual').classList.toggle('in', t==='Jual');
+}
+async function submitInvestasiTransaksi(){
+  const qty = Number(document.getElementById('invTransQtyInput').value.replace(/[^\d]/g,"")) || 0;
+  const harga = Number(document.getElementById('invTransHargaInput').value.replace(/[^\d]/g,"")) || 0;
+  if (!qty || !harga){ showToast("Isi jumlah & harga dulu ya"); return; }
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const btn = document.getElementById('saveInvTransBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({
+      action:"addInvestasiTransaksi", instrumenId: state.selectedInstrumenId, tipe: state.invTransTipe, qty, harga,
+      catatan: document.getElementById('invTransCatatanInput').value.trim(),
+      tanggal: state.genericTanggal.invTrans
+    });
+    state.investasi = data;
+    renderInvestasiView(data);
+    renderInstrumenDetailSheet();
+    showToast("Transaksi tersimpan ✅");
+    closeInvestasiTransaksiSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan Transaksi"; }
+}
+
+function openUpdateHargaSheet(){
+  const ins = state.investasi.instrumen.find(x=>x.id===state.selectedInstrumenId);
+  document.getElementById('updateHargaTitle').textContent = "Update Harga — " + (ins?ins.nama:'');
+  document.getElementById('updateHargaInput').value = ins && ins.hargaSekarang ? ins.hargaSekarang.toLocaleString('id-ID') : '';
+  document.getElementById('overlay14').classList.add('show');
+  document.getElementById('sheetUpdateHarga').classList.add('show');
+}
+function closeUpdateHargaSheet(){
+  document.getElementById('overlay14').classList.remove('show');
+  document.getElementById('sheetUpdateHarga').classList.remove('show');
+}
+async function submitUpdateHarga(){
+  const hargaSekarang = Number(document.getElementById('updateHargaInput').value.replace(/[^\d]/g,"")) || 0;
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const btn = document.getElementById('saveUpdateHargaBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({ action:"updateHargaInstrumen", id: state.selectedInstrumenId, hargaSekarang });
+    state.investasi = data;
+    renderInvestasiView(data);
+    renderInstrumenDetailSheet();
+    showToast("Harga diperbarui ✅");
+    closeUpdateHargaSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan Harga"; }
+}
+
+/* =====================================================================
+   MENU UTAMA TAMBAHAN: UANG MAMA
+===================================================================== */
+async function goUangMama(){
+  switchView('uangmama');
+  document.getElementById('uangMamaSaldo').textContent = '…';
+  document.getElementById('uangMamaList').innerHTML = '<div class="empty-note">Memuat…</div>';
+  try {
+    const data = await fetchAction('uangmama');
+    state.uangMama = data;
+    renderUangMamaView(data);
+  } catch(err){ showToast("Gagal memuat data Uang Mama: " + err.message); }
+}
+function renderUangMamaView(data){
+  document.getElementById('uangMamaSaldo').textContent = formatRupiah(data.saldo);
+  const listEl = document.getElementById('uangMamaList');
+  if (!data.riwayat.length){
+    listEl.innerHTML = '<div class="empty-note">Belum ada catatan. Tap tombol + untuk mulai mencatat.</div>';
+    return;
+  }
+  listEl.innerHTML = data.riwayat.map(r => `
+    <div class="trx-row">
+      <div class="trx-icon">${r.tipe==='Masuk'?'⬇️':'⬆️'}</div>
+      <div class="trx-mid">
+        <div class="trx-cat">${escHtml(r.catatan || (r.tipe==='Masuk'?'Uang masuk':'Uang keluar'))}</div>
+        <div class="trx-meta">${formatTanggalDisplay(r.tanggal.slice(0,10))}</div>
+      </div>
+      <div class="trx-amt ${r.tipe==='Masuk'?'in':'out'}">${r.tipe==='Masuk'?'+':'-'}${formatRupiah(r.jumlah)}</div>
+      <button class="trx-del" onclick="confirmDeleteUangMama('${r.id}')">✕</button>
+    </div>
+  `).join('');
+}
+function openUangMamaSheet(){
+  document.getElementById('uangMamaJumlahInput').value = '';
+  document.getElementById('uangMamaCatatanInput').value = '';
+  setUangMamaTipe('Masuk');
+  state.genericTanggal.uangMama = todayStr();
+  document.getElementById('uangMamaTanggalInput').value = todayStr();
+  document.getElementById('uangMamaTanggalDisplay').textContent = 'Hari ini';
+  document.getElementById('overlay15').classList.add('show');
+  document.getElementById('sheetUangMama').classList.add('show');
+}
+function closeUangMamaSheet(){
+  document.getElementById('overlay15').classList.remove('show');
+  document.getElementById('sheetUangMama').classList.remove('show');
+}
+function setUangMamaTipe(t){
+  state.uangMamaTipe = t;
+  document.getElementById('btnUmMasuk').classList.toggle('active', t==='Masuk');
+  document.getElementById('btnUmMasuk').classList.toggle('in', t==='Masuk');
+  document.getElementById('btnUmKeluar').classList.toggle('active', t==='Keluar');
+  document.getElementById('btnUmKeluar').classList.toggle('out', t==='Keluar');
+}
+async function submitUangMama(){
+  const jumlah = Number(document.getElementById('uangMamaJumlahInput').value.replace(/[^\d]/g,"")) || 0;
+  if (!jumlah){ showToast("Isi jumlah dulu ya"); return; }
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  const btn = document.getElementById('saveUangMamaBtn');
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const data = await postAction({
+      action:"addUangMama", tipe: state.uangMamaTipe, jumlah,
+      catatan: document.getElementById('uangMamaCatatanInput').value.trim(),
+      tanggal: state.genericTanggal.uangMama
+    });
+    state.uangMama = data;
+    renderUangMamaView(data);
+    showToast("Tersimpan ✅");
+    closeUangMamaSheet();
+  } catch(err){ showToast("Gagal: " + err.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan"; }
+}
+async function confirmDeleteUangMama(id){
+  if (!confirm("Hapus catatan ini?")) return;
+  try {
+    const data = await postAction({ action:"deleteUangMama", id });
+    state.uangMama = data;
+    renderUangMamaView(data);
+    showToast("Catatan dihapus");
+  } catch(err){ showToast("Gagal: " + err.message); }
 }
 
 /* ---------------- BOOTSTRAP ---------------- */
