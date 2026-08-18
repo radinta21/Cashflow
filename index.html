@@ -311,6 +311,8 @@
   .grabber{width:38px;height:4px;background:#eecdd6;border-radius:4px;margin:2px auto 12px;}
   .sheet-title{text-align:center;font-size:15px;font-weight:800;margin:0 0 16px;}
 
+  .scan-nota-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px dashed var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:14px;padding:11px 0;font-size:13px;font-weight:800;margin-bottom:14px;}
+  .scan-nota-btn:disabled{opacity:0.6;}
   .type-toggle{display:flex;background:#f6e9ed;border-radius:14px;padding:4px;margin-bottom:18px;}
   .type-toggle button{flex:1;border:none;background:none;padding:10px 0;border-radius:11px;font-size:13px;font-weight:700;color:var(--ink-soft);}
   .type-toggle button.active.out{background:var(--accent);color:#fff;}
@@ -713,7 +715,7 @@
       </div>
       <div class="insight" style="margin-top:12px;">
         <span class="ic">📌</span>
-        <span>Pencatatan Uang Mama</span>
+        <span>Catatan: ini hanya pencatatan uang titipan mama (keluar-masuk & saldo saat ini). Tidak dihitung ke saldo utama / kekayaanmu, karena uang ini bukan milikmu.</span>
       </div>
       <div class="section-title">Riwayat Keluar Masuk</div>
       <div class="card riwayat-card" style="margin-top:0;">
@@ -742,6 +744,9 @@
     <button class="close-x" onclick="closeSheet()">✕</button>
     <div class="grabber"></div>
     <p class="sheet-title">Tambah Transaksi</p>
+
+    <button type="button" class="scan-nota-btn" id="scanNotaBtn" onclick="triggerNotaScan()">📷 Scan Nota (Isi Otomatis dengan AI)</button>
+    <input type="file" id="notaFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleNotaFile(this)">
 
     <div class="type-toggle">
       <button class="active out" id="btnOut" onclick="setTipe('Pengeluaran')">Pengeluaran</button>
@@ -2339,6 +2344,70 @@ async function submitTransaksi(){
   } finally {
     btn.disabled = false;
     btn.textContent = "Simpan";
+  }
+}
+
+/* ---------------- SCAN NOTA (Gemini AI) ---------------- */
+function triggerNotaScan(){
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  document.getElementById('notaFileInput').click();
+}
+
+async function handleNotaFile(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = ""; // reset supaya foto/file yang sama bisa dipilih lagi nanti
+  if (!file) return;
+
+  const btn = document.getElementById('scanNotaBtn');
+  btn.disabled = true;
+  btn.textContent = "⏳ Membaca nota...";
+
+  try {
+    const { base64, mimeType } = await fileToBase64(file);
+    const hasil = await postAction({ action: "scanNota", imageBase64: base64, mimeType: mimeType });
+    applyScanResultToForm(hasil);
+    showToast("Nota berhasil dibaca — cek dulu datanya sebelum Simpan ✅");
+  } catch (err) {
+    showToast("Gagal scan nota: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "📷 Scan Nota (Isi Otomatis dengan AI)";
+  }
+}
+
+function fileToBase64(file){
+  return new Promise(function(resolve, reject){
+    const reader = new FileReader();
+    reader.onload = function(){
+      const result = String(reader.result || "");
+      const base64 = result.split(",")[1] || "";
+      resolve({ base64: base64, mimeType: file.type || "image/jpeg" });
+    };
+    reader.onerror = function(){ reject(new Error("Gagal membaca file gambar")); };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Isi form Tambah Transaksi dengan hasil bacaan Gemini. Transaksi dari
+// nota selalu dianggap Pengeluaran. User tetap harus klik "Simpan" sendiri
+// supaya ada kesempatan koreksi kalau AI salah baca.
+function applyScanResultToForm(hasil){
+  setTipe('Pengeluaran');
+
+  if (hasil.jumlah > 0){
+    document.getElementById('jumlahInput').value = Number(hasil.jumlah).toLocaleString('id-ID');
+  }
+  if (hasil.tanggal){
+    state.tanggal = hasil.tanggal;
+    document.getElementById('tanggalInput').value = hasil.tanggal;
+    document.getElementById('tanggalDisplay').textContent = formatTanggalDisplay(hasil.tanggal);
+  }
+  if (hasil.catatan){
+    document.getElementById('catatanInput').value = hasil.catatan;
+  }
+  if (hasil.kategori){
+    setKategori(hasil.kategori);
+    renderKategoriGridUI();
   }
 }
 
