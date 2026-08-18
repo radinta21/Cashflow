@@ -142,10 +142,11 @@
   .donut-head .link{font-size:12px;color:var(--accent);font-weight:800;}
   .donut-wrap{display:flex;align-items:center;gap:18px;}
   .donut{position:relative;width:126px;height:126px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .donut::before{content:"";position:absolute;inset:16px;background:#fff;border-radius:50%;}
-  .donut-center{position:relative;z-index:2;text-align:center;}
+  .donut-center{position:relative;z-index:2;text-align:center;cursor:pointer;max-width:88px;}
   .donut-center .t{font-size:10px;color:var(--ink-soft);}
   .donut-center .v{font-size:12.5px;font-weight:800;}
+  .donut-seg{cursor:pointer;transition:opacity .15s ease,stroke-width .15s ease;}
+  .donut-hint{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin:10px 0 0;text-align:center;}
   .legend{flex:1;display:flex;flex-direction:column;gap:9px;}
   .legend-row{display:flex;align-items:center;gap:8px;font-size:12px;}
   .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
@@ -154,6 +155,11 @@
   .empty-note{font-size:12px;color:var(--ink-soft);padding:10px 0;}
 
   .riwayat-card{margin-top:16px;margin-bottom:8px;}
+  .riwayat-day-group{margin-bottom:4px;}
+  .riwayat-day-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 10px;margin:6px -4px 2px;background:var(--accent-soft);border-radius:10px;}
+  .riwayat-day-lbl{font-size:11.5px;font-weight:800;color:var(--ink);}
+  .riwayat-day-net{font-size:11.5px;font-weight:800;}
+  .riwayat-day-group:first-child .riwayat-day-head{margin-top:0;}
   .trx-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
   .trx-row:last-child{border-bottom:none;}
   .trx-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--accent-soft);}
@@ -523,13 +529,15 @@
         </div>
         <div class="donut-wrap">
           <div class="donut" id="donutRing">
-            <div class="donut-center">
+            <svg id="donutSvg" viewBox="0 0 126 126" width="126" height="126" style="position:absolute;inset:0;"></svg>
+            <div class="donut-center" id="donutCenter" onclick="resetDonutCenter()">
               <div class="t">Total</div>
               <div class="v" id="donutTotal">Rp 0</div>
             </div>
           </div>
           <div class="legend" id="legendList"></div>
         </div>
+        <p class="donut-hint" id="donutHint">Tap warna pada pie chart atau kategori di samping untuk lihat transaksinya</p>
       </div>
 
       <div class="card riwayat-card">
@@ -1462,33 +1470,46 @@ function renderBeranda(data){
     document.getElementById('pctBiggest').textContent = "";
   }
 
-  const donut = document.getElementById('donutRing');
   const total = data.bulanIni.pengeluaran;
-  document.getElementById('donutTotal').textContent = formatRupiah(total);
   const legendEl = document.getElementById('legendList');
+  const svg = document.getElementById('donutSvg');
+
+  state.donutByCat = byCat;
+  state.donutTotal = total;
+
+  const R = 53, CX = 63, CY = 63, SW = 16;
+  const circumference = 2 * Math.PI * R;
 
   if (total > 0 && byCat.length > 0){
-    let acc = 0;
-    const stops = byCat.map((c, i) => {
+    let accLen = 0;
+    const segs = byCat.map(function(c, i){
       const color = DONUT_COLORS[i % DONUT_COLORS.length];
-      const start = acc;
-      acc += (c.jumlah/total) * 360;
-      return `${color} ${start}deg ${acc}deg`;
+      const len = (c.jumlah/total) * circumference;
+      const dashoffset = -accLen;
+      accLen += len;
+      return `<circle class="donut-seg" data-idx="${i}" cx="${CX}" cy="${CY}" r="${R}" fill="none"
+        stroke="${color}" stroke-width="${SW}"
+        stroke-dasharray="${len.toFixed(2)} ${(circumference-len).toFixed(2)}"
+        stroke-dashoffset="${dashoffset.toFixed(2)}"
+        onclick="onDonutSliceClick(${i})"><title>${c.icon} ${c.kategori}: ${formatRupiah(c.jumlah)} (${c.persen}%)</title></circle>`;
     });
-    donut.style.background = `conic-gradient(${stops.join(',')})`;
+    svg.innerHTML = `<g transform="rotate(-90 ${CX} ${CY})">${segs.join('')}</g>`;
+    svg.style.overflow = 'visible';
+
     legendEl.innerHTML = byCat.slice(0,5).map((c,i) => `
-      <div class="legend-row clickable" onclick="openKategoriBulanIniDetailSheet('${escAttr(c.kategori)}','Pengeluaran','${escAttr(c.icon)}')">
+      <div class="legend-row clickable" onclick="onDonutSliceClick(${i})">
         <span class="dot" style="background:${DONUT_COLORS[i % DONUT_COLORS.length]}"></span>
         <span class="legend-name">${c.icon} ${c.kategori}</span>
         <span class="legend-pct">${c.persen}%</span>
       </div>
     `).join('');
   } else {
-    donut.style.background = "#f3dde3";
+    svg.innerHTML = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#f3dde3" stroke-width="${SW}"></circle>`;
     legendEl.innerHTML = `<div class="empty-note">Belum ada data pengeluaran bulan ini.</div>`;
   }
+  resetDonutCenter();
 
-  document.getElementById('riwayatListHome').innerHTML = renderRiwayatRows(data.riwayat.slice(0,6));
+  document.getElementById('riwayatListHome').innerHTML = renderRiwayatGrouped(data.riwayat.slice(0,6));
 
   renderAktivitasBulanIni(data);
 
@@ -1568,26 +1589,80 @@ function onSearchInput(){
     : `<div class="empty-note">Tidak ada transaksi yang cocok dengan "${q}".</div>`;
 }
 
+function renderTrxRow(r){
+  const tgl = new Date(r.tanggal);
+  const tglStr = tgl.toLocaleDateString('id-ID', { day:'2-digit', month:'short' }) + ' · ' +
+                 tgl.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+  const label = r.isAdjustment ? (r.catatan || 'Penyesuaian saldo') : (r.catatan ? r.catatan : r.kategori);
+  return `
+    <div class="trx-row">
+      <div class="trx-icon">${r.icon}</div>
+      <div class="trx-mid">
+        <div class="trx-cat">${label}</div>
+        <div class="trx-meta">${r.dompet} · ${tglStr}</div>
+      </div>
+      <div class="trx-amt ${r.tipe==='Pemasukan'?'in':'out'}">${r.tipe==='Pemasukan'?'+':'-'} ${formatRupiah(r.jumlah)}</div>
+      <button class="trx-del" onclick="confirmDeleteTransaksi('${r.id}')">🗑️</button>
+    </div>
+  `;
+}
 function renderRiwayatRows(rows){
   if (rows.length === 0){
     return `<div class="empty-note">Belum ada transaksi. Tap tombol + untuk menambahkan.</div>`;
   }
-  return rows.map(r => {
-    const tgl = new Date(r.tanggal);
-    const tglStr = tgl.toLocaleDateString('id-ID', { day:'2-digit', month:'short' }) + ' · ' +
-                   tgl.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
-    const label = r.isAdjustment ? (r.catatan || 'Penyesuaian saldo') : (r.catatan ? r.catatan : r.kategori);
+  return rows.map(renderTrxRow).join('');
+}
+// Sama seperti renderRiwayatRows, tapi dikelompokkan per tanggal dengan
+// header "Hari Ini / Kemarin / Nama hari, tanggal" + total bersih hari itu,
+// supaya riwayat harian lebih mudah dibaca (mirip tampilan aplikasi keuangan).
+function renderRiwayatGrouped(rows){
+  if (rows.length === 0){
+    return `<div class="empty-note">Belum ada transaksi. Tap tombol + untuk menambahkan.</div>`;
+  }
+  const now = new Date();
+  const todayKey = now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate();
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate()-1);
+  const yesterdayKey = y.getFullYear()+'-'+y.getMonth()+'-'+y.getDate();
+
+  const groups = [];
+  let curKey = null, curGroup = null;
+  rows.forEach(function(r){
+    const d = new Date(r.tanggal);
+    const key = d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+    if (key !== curKey){
+      curKey = key;
+      curGroup = { key: key, date: d, rows: [] };
+      groups.push(curGroup);
+    }
+    curGroup.rows.push(r);
+  });
+
+  return groups.map(function(g){
+    let dayLbl;
+    if (g.key === todayKey) dayLbl = 'Hari Ini';
+    else if (g.key === yesterdayKey) dayLbl = 'Kemarin';
+    else {
+      const opt = { weekday:'long', day:'2-digit', month:'long' };
+      if (g.date.getFullYear() !== now.getFullYear()) opt.year = 'numeric';
+      dayLbl = g.date.toLocaleDateString('id-ID', opt);
+    }
+
+    let masuk = 0, keluar = 0;
+    g.rows.forEach(function(r){
+      if (r.tipe === 'Pemasukan') masuk += r.jumlah; else keluar += r.jumlah;
+    });
+    const net = masuk - keluar;
+    const netColor = net > 0 ? 'var(--green)' : (net < 0 ? 'var(--red)' : 'var(--ink-soft)');
+    const netStr = net === 0 ? '—' : (net > 0 ? '+' : '-') + ' ' + formatRupiah(Math.abs(net));
+
     return `
-      <div class="trx-row">
-        <div class="trx-icon">${r.icon}</div>
-        <div class="trx-mid">
-          <div class="trx-cat">${label}</div>
-          <div class="trx-meta">${r.dompet} · ${tglStr}</div>
+      <div class="riwayat-day-group">
+        <div class="riwayat-day-head">
+          <span class="riwayat-day-lbl">${dayLbl}</span>
+          <span class="riwayat-day-net" style="color:${netColor};">${netStr}</span>
         </div>
-        <div class="trx-amt ${r.tipe==='Pemasukan'?'in':'out'}">${r.tipe==='Pemasukan'?'+':'-'} ${formatRupiah(r.jumlah)}</div>
-        <button class="trx-del" onclick="confirmDeleteTransaksi('${r.id}')">🗑️</button>
-      </div>
-    `;
+        ${g.rows.map(renderTrxRow).join('')}
+      </div>`;
   }).join('');
 }
 
@@ -1615,7 +1690,7 @@ function renderDompetView(data){
 /* ---------------- RENDER: RIWAYAT (full) ---------------- */
 function renderRiwayatView(data){
   document.getElementById('riwayatSubLbl').textContent = data.riwayat.length + " transaksi tercatat";
-  document.getElementById('riwayatListFull').innerHTML = renderRiwayatRows(data.riwayat);
+  document.getElementById('riwayatListFull').innerHTML = renderRiwayatGrouped(data.riwayat);
 }
 
 /* ---------------- LAPORAN: PERIOD HELPERS ---------------- */
@@ -2031,6 +2106,34 @@ function closeRingkasanSheet(){
   document.getElementById('sheetRingkasan').classList.remove('show');
 }
 
+/* ---------------- DONUT "PENGELUARAN BULAN INI" (klik warna pie chart) ---------------- */
+function resetDonutCenter(){
+  const total = state.donutTotal || 0;
+  document.getElementById('donutCenter').innerHTML =
+    `<div class="t">Total</div><div class="v" id="donutTotal">${formatRupiah(total)}</div>`;
+  highlightDonutSeg(-1);
+}
+function highlightDonutSeg(idx){
+  document.querySelectorAll('#donutSvg .donut-seg').forEach(function(seg){
+    const isSel = Number(seg.dataset.idx) === idx;
+    seg.style.opacity = (idx === -1 || isSel) ? '1' : '0.35';
+    seg.setAttribute('stroke-width', isSel ? '18' : '16');
+  });
+}
+// Klik warna/slice pada pie chart "Pengeluaran Bulan Ini" ATAU legend di sampingnya:
+// menandai slice yang diklik, menampilkan info kategori di tengah donut, dan
+// membuka daftar transaksi kategori tersebut.
+function onDonutSliceClick(idx){
+  const c = (state.donutByCat || [])[idx];
+  if (!c) return;
+  highlightDonutSeg(idx);
+  document.getElementById('donutCenter').innerHTML = `
+    <div class="t" style="font-size:9px;">${c.icon} ${c.kategori}</div>
+    <div class="v" style="font-size:13px;">${formatRupiah(c.jumlah)}</div>
+    <div class="t" style="font-size:9px;">${c.persen}% bulan ini</div>`;
+  openKategoriBulanIniDetailSheet(c.kategori, 'Pengeluaran', c.icon);
+}
+
 /* ---------------- DETAIL TRANSAKSI (klik kategori / tanggal / periode) ---------------- */
 // opts: { title, filterFn(data) -> rows[], emptyMsg }
 function openDetailTrxSheet(opts){
@@ -2043,6 +2146,7 @@ function closeDetailTrxSheet(){
   document.getElementById('overlay16').classList.remove('show');
   document.getElementById('sheetDetailTrx').classList.remove('show');
   state.detailTrx = null;
+  if (document.getElementById('donutCenter')) resetDonutCenter();
 }
 function renderDetailTrxSheet(){
   const opts = state.detailTrx;
@@ -2079,8 +2183,14 @@ function renderDetailTrxSheet(){
   }
 
   document.getElementById('detailTrxCount').textContent = rows.length + ' transaksi';
+  const spansMultipleDays = (function(){
+    if (rows.length < 2) return false;
+    const keyOf = r => { const d = new Date(r.tanggal); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); };
+    const firstKey = keyOf(rows[0]);
+    return rows.some(function(r){ return keyOf(r) !== firstKey; });
+  })();
   document.getElementById('detailTrxList').innerHTML = rows.length
-    ? renderRiwayatRows(rows)
+    ? (spansMultipleDays ? renderRiwayatGrouped(rows) : renderRiwayatRows(rows))
     : `<div class="empty-note">${opts.emptyMsg || 'Belum ada transaksi.'}</div>`;
 }
 
