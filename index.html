@@ -203,7 +203,7 @@
   .trend-group.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;padding:4px 2px;}
   .trend-group.clickable:hover{background:#faf3f7;}
   .cal-cell{cursor:pointer;}
-  .tt-link{display:block;width:100%;text-align:center;margin-top:6px;padding:5px 0 0;background:none;border:none;border-top:1px solid var(--line);font-size:11px;font-weight:800;color:var(--accent);}
+  .tt-summary{display:block;width:100%;text-align:center;margin-top:6px;padding:5px 0 0;border-top:1px solid var(--line);font-size:11px;font-weight:800;color:var(--ink);}
 
   .sub-trx-toggle-hint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:10px;font-weight:600;}
 
@@ -231,6 +231,7 @@
 
   /* ---------- KESEHATAN CASHFLOW ---------- */
   .kesehatan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  .kesehatan-card.full{grid-column:1 / -1;}
   .kesehatan-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 14px;box-shadow:var(--shadow);}
   .kesehatan-card .k{font-size:10px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
   .kesehatan-card .v{font-size:16px;font-weight:800;margin-top:5px;color:var(--ink);}
@@ -242,6 +243,8 @@
   .status-badge.bad{background:#fde6e8;color:#d6303f;}
   .rule-row{padding:11px 0;border-bottom:1px solid var(--line);}
   .rule-row:last-child{border-bottom:none;}
+  .rule-row.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;padding-left:6px;padding-right:6px;margin:0 -6px;}
+  .rule-row.clickable:hover{background:#faf3f7;}
   .rule-row-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:6px;}
   .rule-row-target{font-size:10.5px;color:var(--ink-soft);font-weight:700;}
   .rule-row-sub{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:5px;display:flex;justify-content:space-between;}
@@ -1619,7 +1622,7 @@ function renderAktivitasBulanIni(data){
 
   const dayTotals = {};
   data.riwayat.forEach(function(r){
-    if (r.isAdjustment || r.tipe !== 'Pengeluaran') return;
+    if (r.isAdjustment || r.isTransfer || r.tipe !== 'Pengeluaran') return;
     const d = new Date(r.tanggal);
     if (d.getFullYear() === y && d.getMonth() === m){
       dayTotals[d.getDate()] = (dayTotals[d.getDate()] || 0) + r.jumlah;
@@ -1806,7 +1809,7 @@ function daysBetween(start, end){
 }
 function filterRiwayatByRange(riwayat, start, end){
   return riwayat.filter(function(r){
-    if (r.isAdjustment) return false;
+    if (r.isAdjustment || r.isTransfer) return false;
     const d = new Date(r.tanggal);
     return d >= start && d <= end;
   });
@@ -1880,7 +1883,7 @@ function buildLast6MonthsBuckets(riwayat){
       pemasukan: 0, pengeluaran: 0
     });
   }
-  riwayat.filter(r=>!r.isAdjustment).forEach(function(r){
+  riwayat.filter(r=>!r.isAdjustment && !r.isTransfer).forEach(function(r){
     const d = new Date(r.tanggal);
     const key = d.getFullYear()+'-'+d.getMonth();
     const b = buckets.find(function(x){ return x.key === key; });
@@ -1946,10 +1949,11 @@ function showLap6Tooltip(i){
   if (!buckets || !layout || !buckets[i]) return;
   const b = buckets[i];
   const tt = document.getElementById('lap6BulanTooltip');
+  const net = b.pemasukan - b.pengeluaran;
   tt.innerHTML = `<div class="ttl">${b.label}</div>
     <div class="row"><span class="dot" style="background:#2ecc71"></span>Pemasukan: ${formatRupiah(b.pemasukan)}</div>
     <div class="row"><span class="dot" style="background:#ff4d5e"></span>Pengeluaran: ${formatRupiah(b.pengeluaran)}</div>
-    <button class="tt-link" onclick="openTrendBucketDetailSheet('${b.key}','${escAttr(b.label)}')">Lihat transaksi →</button>`;
+    <div class="tt-summary">${net>=0?'Surplus':'Defisit'}: ${formatRupiah(Math.abs(net))}</div>`;
 
   const wrap = document.getElementById('lap6BulanWrap');
   const wrapW = wrap.clientWidth || 320;
@@ -1994,7 +1998,11 @@ function renderLaporanView(data){
   document.getElementById('lapSummaryGrid').innerHTML = `
     <div class="lap-card"><div class="k">Total Pemasukan</div><div class="v">${formatRupiah(pemasukan)}</div></div>
     <div class="lap-card"><div class="k">Total Pengeluaran</div><div class="v">${formatRupiah(pengeluaran)}</div></div>
-    <div class="lap-card"><div class="k">Arus Kas Bersih</div><div class="v ${net>=0?'pos':'neg'}">${net>=0?'+':'-'} ${formatRupiah(Math.abs(net))}</div></div>
+    <div class="lap-card">
+      <div class="k">Arus Kas Bersih</div>
+      <div class="v ${net>=0?'pos':'neg'}">${net>=0?'+':'-'} ${formatRupiah(Math.abs(net))}</div>
+      <span class="status-badge ${net>=0?'good':'bad'}">${net>=0?'✅ Sehat (Surplus)':'⚠️ Bahaya (Defisit)'}</span>
+    </div>
     <div class="lap-card"><div class="k">Rata² Pengeluaran / Hari</div><div class="v">${formatRupiah(avgHarian)}</div></div>
   `;
 
@@ -2122,18 +2130,16 @@ function renderKesehatanCashflow(pemasukan, pengeluaran, net, kelompokTotal, top
   const pctGayaHidup = pemasukan > 0 ? Math.round((gayaHidup/pemasukan)*1000)/10 : 0;
   const savingsRate = pemasukan > 0 ? Math.round((tabungan/pemasukan)*1000)/10 : 0;
 
-  const cashflowSehat = net >= 0;
   const savingsStatus = savingsRate >= 20
     ? { lbl: 'Sangat Sehat', cls: 'good', ic: '✅' }
     : (savingsRate >= 10 ? { lbl: 'Cukup', cls: 'mid', ic: '🟡' } : { lbl: 'Kurang Sehat', cls: 'bad', ic: '⚠️' });
 
+  // Catatan: kartu "Arus Kas Bersih" (surplus/defisit) sudah tampil di
+  // grid ringkasan atas beserta status Sehat/Bahaya-nya, jadi di sini
+  // TIDAK diulang lagi (dulu ada 2 kartu yang menampilkan angka net yang
+  // sama persis) — cukup 1 kartu Savings Rate, dibuat selebar penuh.
   document.getElementById('kesehatanGrid').innerHTML = `
-    <div class="kesehatan-card">
-      <div class="k">Rasio Cashflow Bersih</div>
-      <div class="v ${net>=0?'pos':'neg'}">${net>=0?'+':'-'} ${formatRupiah(Math.abs(net))}</div>
-      <span class="status-badge ${cashflowSehat?'good':'bad'}">${cashflowSehat?'✅ Sehat (Surplus)':'⚠️ Bahaya (Defisit)'}</span>
-    </div>
-    <div class="kesehatan-card">
+    <div class="kesehatan-card full">
       <div class="k">Savings Rate</div>
       <div class="v">${savingsRate}%</div>
       <span class="status-badge ${savingsStatus.cls}">${savingsStatus.ic} ${savingsStatus.lbl}</span>
@@ -2141,9 +2147,9 @@ function renderKesehatanCashflow(pemasukan, pengeluaran, net, kelompokTotal, top
   `;
 
   const rules = [
-    { label: 'Kebutuhan Pokok', jumlah: kebutuhan, pct: pctKebutuhan, batas: 50, mode: 'max' },
-    { label: 'Gaya Hidup / Hiburan', jumlah: gayaHidup, pct: pctGayaHidup, batas: 30, mode: 'max' },
-    { label: 'Tabungan / Investasi', jumlah: tabungan, pct: savingsRate, batas: 20, mode: 'min' }
+    { label: 'Kebutuhan Pokok', kelompokKey: 'Kebutuhan Pokok', jumlah: kebutuhan, pct: pctKebutuhan, batas: 50, mode: 'max' },
+    { label: 'Gaya Hidup / Hiburan', kelompokKey: 'Gaya Hidup', jumlah: gayaHidup, pct: pctGayaHidup, batas: 30, mode: 'max' },
+    { label: 'Tabungan / Investasi', kelompokKey: 'Tabungan/Investasi', jumlah: tabungan, pct: savingsRate, batas: 20, mode: 'min' }
   ];
 
   document.getElementById('ruleList').innerHTML = rules.map(function(r){
@@ -2154,7 +2160,7 @@ function renderKesehatanCashflow(pemasukan, pengeluaran, net, kelompokTotal, top
       cls = r.pct >= r.batas ? 'ok' : (r.pct >= r.batas * 0.5 ? 'warn' : 'over');
     }
     const widthPct = Math.max(2, Math.min(100, r.pct));
-    return `<div class="rule-row">
+    return `<div class="rule-row clickable" onclick="openKelompokDetailSheet('${escAttr(r.kelompokKey)}','${escAttr(r.label)}')">
       <div class="rule-row-head">
         <span>${r.label}</span>
         <span class="rule-row-target">${r.mode==='max'?'maks':'min'} ${r.batas}%</span>
@@ -2442,7 +2448,7 @@ function openTrendBucketDetailSheet(key, label){
     title: '📊 ' + label,
     filterFn: function(data){
       return data.riwayat.filter(function(r){
-        if (r.isAdjustment) return false;
+        if (r.isAdjustment || r.isTransfer) return false;
         const d = new Date(r.tanggal);
         if (isDaily) return d.getFullYear() === parts[0] && d.getMonth() === parts[1] && d.getDate() === parts[2];
         return d.getFullYear() === parts[0] && d.getMonth() === parts[1];
@@ -2464,6 +2470,26 @@ function openTopExpenseDetailSheet(kategori, icon){
       });
     },
     emptyMsg: 'Tidak ada transaksi kategori ini pada periode ini.'
+  });
+}
+
+// Klik salah satu baris kelompok di "Beban Pengeluaran (Rule 50/30/20)" ->
+// semua transaksi pengeluaran kelompok itu (mis. "Kebutuhan Pokok") pada
+// periode filter Laporan yang sedang aktif. Transfer antar dompet otomatis
+// tidak ikut (tidak punya kelompok / tidak dihitung sebagai pengeluaran riil).
+function openKelompokDetailSheet(kelompok, label){
+  const filterKey = state.report.filter;
+  openDetailTrxSheet({
+    title: '📋 ' + label,
+    filterFn: function(data){
+      const { start, end } = getPeriodRange(filterKey);
+      const kMap = {};
+      (data.kategori || []).forEach(function(k){ kMap[k.nama] = k.kelompok || ''; });
+      return filterRiwayatByRange(data.riwayat, start, end).filter(function(r){
+        return r.tipe === 'Pengeluaran' && kMap[r.kategori] === kelompok;
+      });
+    },
+    emptyMsg: 'Belum ada transaksi pada kelompok ini di periode ini.'
   });
 }
 
