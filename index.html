@@ -229,6 +229,35 @@
   .budget-bar-fill.over{background:var(--red);}
   .budget-row-sub{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:5px;}
 
+  /* ---------- KESEHATAN CASHFLOW ---------- */
+  .kesehatan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  .kesehatan-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 14px;box-shadow:var(--shadow);}
+  .kesehatan-card .k{font-size:10px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
+  .kesehatan-card .v{font-size:16px;font-weight:800;margin-top:5px;color:var(--ink);}
+  .kesehatan-card .v.pos{color:var(--green);}
+  .kesehatan-card .v.neg{color:var(--red);}
+  .status-badge{display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;margin-top:6px;}
+  .status-badge.good{background:#e4f9ec;color:#1f9d54;}
+  .status-badge.mid{background:#fef6da;color:#a8790b;}
+  .status-badge.bad{background:#fde6e8;color:#d6303f;}
+  .rule-row{padding:11px 0;border-bottom:1px solid var(--line);}
+  .rule-row:last-child{border-bottom:none;}
+  .rule-row-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .rule-row-target{font-size:10.5px;color:var(--ink-soft);font-weight:700;}
+  .rule-row-sub{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:5px;display:flex;justify-content:space-between;}
+
+  /* ---------- ANALISIS AI ---------- */
+  .ai-card{margin-top:16px;}
+  .ai-empty{font-size:12.5px;color:var(--ink-soft);line-height:1.5;text-align:center;padding:10px 4px 4px;}
+  .ai-btn{width:100%;margin-top:12px;padding:12px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:13px;font-weight:800;}
+  .ai-btn:disabled{opacity:.65;}
+  .ai-result{margin-top:2px;}
+  .ai-summary{font-size:12.5px;color:#4a3a41;line-height:1.55;background:var(--accent-soft);border-radius:10px;padding:11px 12px;margin-top:10px;}
+  .ai-reco-title{font-size:11.5px;font-weight:800;color:var(--ink);margin:14px 0 8px;}
+  .ai-reco-row{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink);line-height:1.45;}
+  .ai-reco-row:last-child{border-bottom:none;}
+  .ai-reco-row .ic{flex-shrink:0;}
+
   /* ---------- VIEWS ---------- */
   .view{display:none;}
   .view.active{display:block;}
@@ -611,6 +640,17 @@
 
       <div class="lap-summary-grid" id="lapSummaryGrid"></div>
 
+      <!-- ============ INDIKATOR KESEHATAN CASHFLOW ============ -->
+      <div class="section-title" style="margin-top:20px;">Indikator Kesehatan Cashflow</div>
+      <div class="kesehatan-grid" id="kesehatanGrid"></div>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="donut-head">
+          <h3>Beban Pengeluaran (Rule 50/30/20)</h3>
+        </div>
+        <div id="ruleList"></div>
+      </div>
+
       <div class="card" style="margin-top:16px;">
         <div class="donut-head">
           <h3>Tren Arus Kas</h3>
@@ -659,6 +699,15 @@
       <div class="insight" id="lapComparisonInsight">
         <span class="ic">📈</span>
         <span id="lapComparisonText">Memuat perbandingan…</span>
+      </div>
+
+      <!-- ============ ANALISIS & REKOMENDASI KEUANGAN AI ============ -->
+      <div class="section-title" style="margin-top:20px;">Analisis & Rekomendasi Keuangan AI</div>
+      <div class="card ai-card">
+        <div id="aiAnalisisBody">
+          <p class="ai-empty">Minta AI membaca kondisi cashflow periode ini (sesuai filter di atas) dan kasih rekomendasi praktis buat kamu.</p>
+        </div>
+        <button class="ai-btn" id="aiAnalisisBtn" onclick="submitAnalisisAI()">✨ Analisis Cashflow Sekarang</button>
       </div>
     </div>
   </div>
@@ -795,6 +844,16 @@
       <button class="chip" data-t="Pengeluaran" onclick="setKategoriTipeSel('Pengeluaran')">Pengeluaran</button>
       <button class="chip" data-t="Pemasukan" onclick="setKategoriTipeSel('Pemasukan')">Pemasukan</button>
       <button class="chip" data-t="Keduanya" onclick="setKategoriTipeSel('Keduanya')">Keduanya</button>
+    </div>
+
+    <div id="kategoriKelompokWrap">
+      <div class="field-label">Kelompok (untuk Indikator Kesehatan Cashflow)</div>
+      <div class="chip-row" id="kategoriKelompokChips">
+        <button class="chip" data-k="Kebutuhan Pokok" onclick="setKategoriKelompokSel('Kebutuhan Pokok')">🧺 Kebutuhan Pokok</button>
+        <button class="chip" data-k="Gaya Hidup" onclick="setKategoriKelompokSel('Gaya Hidup')">🎉 Gaya Hidup</button>
+        <button class="chip" data-k="Tabungan/Investasi" onclick="setKategoriKelompokSel('Tabungan/Investasi')">🐷 Tabungan/Investasi</button>
+      </div>
+      <p style="font-size:11px;color:var(--ink-soft);margin:6px 2px 12px;font-weight:600;">Tips: pakai nama kategori yang sama persis untuk mengubah kelompok kategori lama, tanpa perlu menghapusnya.</p>
     </div>
 
     <div class="field-label">Pilih Icon</div>
@@ -1151,10 +1210,13 @@ let state = {
   dashboard: null,
   kategoriIconSel: KATEGORI_ICON_POOL[0],
   kategoriTipeSel: "Pengeluaran",
+  kategoriKelompokSel: "Kebutuhan Pokok",
   walletIconSel: WALLET_ICON_POOL[0],
   adjustMode: "tambah",
   adjustWalletNama: null,
   report: { filter: "bulanIni", customFrom: "", customTo: "", expandedKategori: null },
+  kesehatanSnapshot: null,
+  aiAnalisis: null,
   budgetKategoriSel: null,
   aktivitasMonthOffset: 0,
   detailTrx: null,
@@ -1344,6 +1406,7 @@ function renderIconPicker(elId, pool, selected, onPick){
 
 function openKategoriSheet(){
   state.kategoriIconSel = KATEGORI_ICON_POOL[0];
+  state.kategoriKelompokSel = 'Kebutuhan Pokok';
   document.getElementById('kategoriNamaInput').value = "";
   renderIconPicker('kategoriIconPicker', KATEGORI_ICON_POOL, state.kategoriIconSel, 'pickKategoriIcon');
   setKategoriTipeSel(state.tipe === 'Pemasukan' ? 'Pemasukan' : 'Pengeluaran');
@@ -1358,6 +1421,16 @@ function setKategoriTipeSel(t){
   state.kategoriTipeSel = t;
   document.querySelectorAll('#kategoriTipeChips .chip').forEach(el=>{
     el.classList.toggle('active', el.dataset.t === t);
+  });
+  // Kelompok (Kebutuhan Pokok/Gaya Hidup/Tabungan & Investasi) cuma relevan
+  // untuk kategori Pengeluaran — dipakai di rule 50/30/20.
+  document.getElementById('kategoriKelompokWrap').style.display = t === 'Pengeluaran' ? 'block' : 'none';
+  if (t === 'Pengeluaran') setKategoriKelompokSel(state.kategoriKelompokSel || 'Kebutuhan Pokok');
+}
+function setKategoriKelompokSel(k){
+  state.kategoriKelompokSel = k;
+  document.querySelectorAll('#kategoriKelompokChips .chip').forEach(el=>{
+    el.classList.toggle('active', el.dataset.k === k);
   });
 }
 function pickKategoriIcon(ic){
@@ -1785,6 +1858,7 @@ function buildTrendBuckets(rows, start, end){
 function setLaporanFilter(f){
   state.report.filter = f;
   state.report.expandedKategori = null;
+  state.aiAnalisis = null; // periode berubah -> analisis lama sudah tidak relevan
   if (state.dashboard) renderLaporanView(state.dashboard);
 }
 function onLapCustomChange(){
@@ -1792,6 +1866,7 @@ function onLapCustomChange(){
   state.report.customTo = document.getElementById('lapCustomToInput').value;
   document.getElementById('lapCustomFromDisplay').textContent = state.report.customFrom ? formatTanggalDisplay(state.report.customFrom) : 'Dari';
   document.getElementById('lapCustomToDisplay').textContent = state.report.customTo ? formatTanggalDisplay(state.report.customTo) : 'Sampai';
+  state.aiAnalisis = null;
   if (state.report.customFrom && state.report.customTo && state.dashboard) renderLaporanView(state.dashboard);
 }
 function buildLast6MonthsBuckets(riwayat){
@@ -1904,6 +1979,18 @@ function renderLaporanView(data){
   const days = daysBetween(start, end);
   const avgHarian = pengeluaran / days;
 
+  // Kelompok pengeluaran (Kebutuhan Pokok / Gaya Hidup / Tabungan & Investasi)
+  // dipetakan dari kategori masing-masing, dipakai untuk Indikator Kesehatan
+  // Cashflow & rule 50/30/20. Kategori tanpa kelompok (mis. Pemasukan,
+  // Transfer Antarkas, Penyesuaian Saldo) otomatis tidak masuk hitungan.
+  const kategoriKelompokMap = {};
+  (data.kategori || []).forEach(function(k){ kategoriKelompokMap[k.nama] = k.kelompok || ''; });
+  const kelompokTotal = { 'Kebutuhan Pokok': 0, 'Gaya Hidup': 0, 'Tabungan/Investasi': 0 };
+  rows.filter(r=>r.tipe==='Pengeluaran' && !r.isAdjustment).forEach(function(r){
+    const kel = kategoriKelompokMap[r.kategori];
+    if (Object.prototype.hasOwnProperty.call(kelompokTotal, kel)) kelompokTotal[kel] += r.jumlah;
+  });
+
   document.getElementById('lapSummaryGrid').innerHTML = `
     <div class="lap-card"><div class="k">Total Pemasukan</div><div class="v">${formatRupiah(pemasukan)}</div></div>
     <div class="lap-card"><div class="k">Total Pengeluaran</div><div class="v">${formatRupiah(pengeluaran)}</div></div>
@@ -1988,6 +2075,9 @@ function renderLaporanView(data){
   }
 
   const top = byCat.slice(0,5);
+
+  renderKesehatanCashflow(pemasukan, pengeluaran, net, kelompokTotal, top, formatRangeLbl(start, end));
+
   document.getElementById('lapTopExpenses').innerHTML = top.length ? top.map(function(c,i){
     return `<div class="top-exp-row clickable" onclick="openTopExpenseDetailSheet('${escAttr(c.kategori)}','${escAttr(c.icon)}')">
       <div class="rank-badge">${i+1}</div>
@@ -2018,6 +2108,117 @@ function renderLaporanView(data){
   } else {
     cmpText.textContent = `Belum ada transaksi pengeluaran pada periode ini.`;
   }
+
+  renderAiAnalisisPanel();
+}
+
+/* ---------------- LAPORAN: INDIKATOR KESEHATAN CASHFLOW ---------------- */
+function renderKesehatanCashflow(pemasukan, pengeluaran, net, kelompokTotal, topKategori, periodeLabel){
+  const kebutuhan = kelompokTotal['Kebutuhan Pokok'] || 0;
+  const gayaHidup = kelompokTotal['Gaya Hidup'] || 0;
+  const tabungan = kelompokTotal['Tabungan/Investasi'] || 0;
+
+  const pctKebutuhan = pemasukan > 0 ? Math.round((kebutuhan/pemasukan)*1000)/10 : 0;
+  const pctGayaHidup = pemasukan > 0 ? Math.round((gayaHidup/pemasukan)*1000)/10 : 0;
+  const savingsRate = pemasukan > 0 ? Math.round((tabungan/pemasukan)*1000)/10 : 0;
+
+  const cashflowSehat = net >= 0;
+  const savingsStatus = savingsRate >= 20
+    ? { lbl: 'Sangat Sehat', cls: 'good', ic: '✅' }
+    : (savingsRate >= 10 ? { lbl: 'Cukup', cls: 'mid', ic: '🟡' } : { lbl: 'Kurang Sehat', cls: 'bad', ic: '⚠️' });
+
+  document.getElementById('kesehatanGrid').innerHTML = `
+    <div class="kesehatan-card">
+      <div class="k">Rasio Cashflow Bersih</div>
+      <div class="v ${net>=0?'pos':'neg'}">${net>=0?'+':'-'} ${formatRupiah(Math.abs(net))}</div>
+      <span class="status-badge ${cashflowSehat?'good':'bad'}">${cashflowSehat?'✅ Sehat (Surplus)':'⚠️ Bahaya (Defisit)'}</span>
+    </div>
+    <div class="kesehatan-card">
+      <div class="k">Savings Rate</div>
+      <div class="v">${savingsRate}%</div>
+      <span class="status-badge ${savingsStatus.cls}">${savingsStatus.ic} ${savingsStatus.lbl}</span>
+    </div>
+  `;
+
+  const rules = [
+    { label: 'Kebutuhan Pokok', jumlah: kebutuhan, pct: pctKebutuhan, batas: 50, mode: 'max' },
+    { label: 'Gaya Hidup / Hiburan', jumlah: gayaHidup, pct: pctGayaHidup, batas: 30, mode: 'max' },
+    { label: 'Tabungan / Investasi', jumlah: tabungan, pct: savingsRate, batas: 20, mode: 'min' }
+  ];
+
+  document.getElementById('ruleList').innerHTML = rules.map(function(r){
+    let cls;
+    if (r.mode === 'max'){
+      cls = r.pct <= r.batas ? 'ok' : (r.pct <= r.batas * 1.15 ? 'warn' : 'over');
+    } else {
+      cls = r.pct >= r.batas ? 'ok' : (r.pct >= r.batas * 0.5 ? 'warn' : 'over');
+    }
+    const widthPct = Math.max(2, Math.min(100, r.pct));
+    return `<div class="rule-row">
+      <div class="rule-row-head">
+        <span>${r.label}</span>
+        <span class="rule-row-target">${r.mode==='max'?'maks':'min'} ${r.batas}%</span>
+      </div>
+      <div class="budget-bar-track"><div class="budget-bar-fill ${cls}" style="width:${widthPct}%"></div></div>
+      <div class="rule-row-sub"><span>${formatRupiah(r.jumlah)}</span><span>${r.pct}% dari pemasukan</span></div>
+    </div>`;
+  }).join('');
+
+  // Simpan snapshot ringkas untuk dikirim ke fitur Analisis & Rekomendasi
+  // Keuangan AI kalau user menekan tombolnya.
+  state.kesehatanSnapshot = {
+    periodeLabel: periodeLabel,
+    pemasukan: pemasukan,
+    pengeluaran: pengeluaran,
+    cashflowBersih: net,
+    savingsRate: savingsRate,
+    kebutuhanPokok: { jumlah: kebutuhan, persen: pctKebutuhan },
+    gayaHidup: { jumlah: gayaHidup, persen: pctGayaHidup },
+    tabunganInvestasi: { jumlah: tabungan, persen: savingsRate },
+    topKategori: (topKategori || []).map(function(c){ return { nama: c.kategori, jumlah: c.jumlah, persen: c.persen }; })
+  };
+}
+
+/* ---------------- LAPORAN: ANALISIS & REKOMENDASI KEUANGAN AI ---------------- */
+async function submitAnalisisAI(){
+  if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
+  if (!state.kesehatanSnapshot){ showToast("Data belum siap, coba lagi sesaat lagi"); return; }
+
+  const btn = document.getElementById('aiAnalisisBtn');
+  btn.disabled = true;
+  btn.textContent = "⏳ Menganalisis...";
+  try {
+    const hasil = await postAction({ action: "analisisAI", ringkasan: state.kesehatanSnapshot });
+    state.aiAnalisis = hasil;
+    renderAiAnalisisPanel();
+  } catch (err) {
+    showToast("Gagal analisis: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✨ Analisis Cashflow Sekarang";
+  }
+}
+function renderAiAnalisisPanel(){
+  const body = document.getElementById('aiAnalisisBody');
+  if (!body) return;
+  const hasil = state.aiAnalisis;
+  if (!hasil){
+    body.innerHTML = `<p class="ai-empty">Minta AI membaca kondisi cashflow periode ini (sesuai filter di atas) dan kasih rekomendasi praktis buat kamu.</p>`;
+    return;
+  }
+  const statusCls = hasil.status === 'Sehat' ? 'good' : (hasil.status === 'Bahaya' ? 'bad' : 'mid');
+  const statusIcon = hasil.status === 'Sehat' ? '✅' : (hasil.status === 'Bahaya' ? '⚠️' : '🟡');
+  const reko = Array.isArray(hasil.rekomendasi) ? hasil.rekomendasi : [];
+  body.innerHTML = `
+    <div class="ai-result">
+      <span class="status-badge ${statusCls}">${statusIcon} ${hasil.status}</span>
+      <p class="ai-summary">${hasil.ringkasan || 'Analisis tidak tersedia.'}</p>
+      ${reko.length ? `
+        <div class="ai-reco-title">Rekomendasi</div>
+        ${reko.map(function(r){ return `<div class="ai-reco-row"><span class="ic">💡</span><span>${r}</span></div>`; }).join('')}
+      ` : ''}
+    </div>
+  `;
 }
 
 /* ---------------- LAPORAN: BUDGET SHEET ---------------- */
@@ -2421,7 +2622,7 @@ async function submitKategori(){
   btn.disabled = true;
   btn.textContent = "Menyimpan...";
   try {
-    const data = await postAction({ action:"addKategori", nama, icon: state.kategoriIconSel, tipe: state.kategoriTipeSel });
+    const data = await postAction({ action:"addKategori", nama, icon: state.kategoriIconSel, tipe: state.kategoriTipeSel, kelompok: state.kategoriKelompokSel });
     renderAll(data);
     state.kategori = nama;
     showToast("Kategori ditambahkan ✅");
