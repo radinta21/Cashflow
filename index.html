@@ -186,9 +186,18 @@
   .trend-legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;color:var(--ink-soft);font-weight:700;}
   .trend-legend span{display:flex;align-items:center;gap:5px;}
 
-  .legend-row.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;}
+  .legend-row.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;padding:4px 6px;margin:-4px -6px;}
   .legend-row.clickable:hover{background:#faf3f7;}
   .legend-row.expanded{background:var(--accent-soft);padding:4px 6px;margin:-4px -6px;}
+  .legend-edit-btn{font-size:12px;background:none;border:none;padding:2px 4px;color:var(--ink-soft);flex-shrink:0;}
+  .budget-row.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;}
+  .budget-row.clickable:hover{background:#faf3f7;}
+  .top-exp-row.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;}
+  .top-exp-row.clickable:hover{background:#faf3f7;}
+  .trend-group.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;padding:4px 2px;}
+  .trend-group.clickable:hover{background:#faf3f7;}
+  .cal-cell{cursor:pointer;}
+  .tt-link{display:block;width:100%;text-align:center;margin-top:6px;padding:5px 0 0;background:none;border:none;border-top:1px solid var(--line);font-size:11px;font-weight:800;color:var(--accent);}
 
   .sub-trx-toggle-hint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:10px;font-weight:600;}
 
@@ -694,6 +703,10 @@
         <div class="hero-amount" id="uangMamaSaldo">Rp 0</div>
         <p class="hero-sub">Total saldo terakhir</p>
       </div>
+      <div class="insight" style="margin-top:12px;">
+        <span class="ic">📌</span>
+        <span>Catatan: ini hanya pencatatan uang titipan mama (keluar-masuk & saldo saat ini). Tidak dihitung ke saldo utama / kekayaanmu, karena uang ini bukan milikmu.</span>
+      </div>
       <div class="section-title">Riwayat Keluar Masuk</div>
       <div class="card riwayat-card" style="margin-top:0;">
         <div id="uangMamaList"></div>
@@ -859,6 +872,19 @@
     <div id="ringkasanTotal" style="text-align:center;font-size:26px;font-weight:800;margin-bottom:2px;"></div>
     <p style="text-align:center;font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:0 0 16px;">Bulan ini</p>
     <div id="ringkasanList"></div>
+  </div>
+</div>
+
+<!-- ============ SHEET: DETAIL TRANSAKSI (klik kategori / tanggal / periode) ============ -->
+<div class="overlay" id="overlay16" onclick="closeDetailTrxSheet()"></div>
+<div class="sheet" id="sheetDetailTrx">
+  <div class="sheet-inner">
+    <button class="close-x" onclick="closeDetailTrxSheet()">✕</button>
+    <div class="grabber"></div>
+    <p class="sheet-title" id="detailTrxTitle">Detail Transaksi</p>
+    <div id="detailTrxSummary" style="margin-bottom:4px;"></div>
+    <p style="text-align:center;font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:0 0 14px;" id="detailTrxCount"></p>
+    <div id="detailTrxList"></div>
   </div>
 </div>
 
@@ -1118,6 +1144,7 @@ let state = {
   report: { filter: "bulanIni", customFrom: "", customTo: "", expandedKategori: null },
   budgetKategoriSel: null,
   aktivitasMonthOffset: 0,
+  detailTrx: null,
 
   // --- Menu Utama tambahan ---
   jualan: null,
@@ -1450,7 +1477,7 @@ function renderBeranda(data){
     });
     donut.style.background = `conic-gradient(${stops.join(',')})`;
     legendEl.innerHTML = byCat.slice(0,5).map((c,i) => `
-      <div class="legend-row">
+      <div class="legend-row clickable" onclick="openKategoriBulanIniDetailSheet('${escAttr(c.kategori)}','Pengeluaran','${escAttr(c.icon)}')">
         <span class="dot" style="background:${DONUT_COLORS[i % DONUT_COLORS.length]}"></span>
         <span class="legend-name">${c.icon} ${c.kategori}</span>
         <span class="legend-pct">${c.persen}%</span>
@@ -1508,7 +1535,7 @@ function renderAktivitasBulanIni(data){
   for (let d=1; d<=totalDays; d++){
     const amt = dayTotals[d];
     const isToday = (y===now.getFullYear() && m===now.getMonth() && d===now.getDate());
-    cells += `<div class="cal-cell ${amt?'has-trx':''} ${isToday?'today':''}">
+    cells += `<div class="cal-cell ${amt?'has-trx':''} ${isToday?'today':''}" onclick="openDayDetailSheet(${y},${m},${d})">
       <span>${d}</span>
       ${amt ? `<span class="amt">${formatRupiahSingkat(amt)}</span>` : ''}
     </div>`;
@@ -1766,7 +1793,8 @@ function showLap6Tooltip(i){
   const tt = document.getElementById('lap6BulanTooltip');
   tt.innerHTML = `<div class="ttl">${b.label}</div>
     <div class="row"><span class="dot" style="background:#2ecc71"></span>Pemasukan: ${formatRupiah(b.pemasukan)}</div>
-    <div class="row"><span class="dot" style="background:#ff4d5e"></span>Pengeluaran: ${formatRupiah(b.pengeluaran)}</div>`;
+    <div class="row"><span class="dot" style="background:#ff4d5e"></span>Pengeluaran: ${formatRupiah(b.pengeluaran)}</div>
+    <button class="tt-link" onclick="openTrendBucketDetailSheet('${b.key}','${escAttr(b.label)}')">Lihat transaksi →</button>`;
 
   const wrap = document.getElementById('lap6BulanWrap');
   const wrapW = wrap.clientWidth || 320;
@@ -1809,7 +1837,7 @@ function renderLaporanView(data){
   document.getElementById('lapTrendChart').innerHTML = buckets.map(function(b){
     const hIn = Math.round((b.pemasukan/maxVal)*100);
     const hOut = Math.round((b.pengeluaran/maxVal)*100);
-    return `<div class="trend-group">
+    return `<div class="trend-group clickable" onclick="openTrendBucketDetailSheet('${b.key}','${escAttr(b.label)}')">
       <div class="trend-bars">
         <div class="trend-bar in" style="height:${b.pemasukan>0?Math.max(hIn,4):0}%"></div>
         <div class="trend-bar out" style="height:${b.pengeluaran>0?Math.max(hOut,4):0}%"></div>
@@ -1867,10 +1895,11 @@ function renderLaporanView(data){
       const spent = curMonthCatMap[b.kategori] || 0;
       const pct = b.jumlah > 0 ? Math.round((spent/b.jumlah)*100) : 0;
       const icon = (data.kategori.find(k=>k.nama===b.kategori) || {}).icon || '🏷️';
-      return `<div class="legend-row clickable" onclick="openBudgetSheet('${escAttr(b.kategori)}')">
+      return `<div class="legend-row clickable" onclick="openKategoriBulanIniDetailSheet('${escAttr(b.kategori)}','Pengeluaran','${escAttr(icon)}')">
         <span class="dot" style="background:${DONUT_COLORS[i % DONUT_COLORS.length]}"></span>
         <span class="legend-name">${icon} ${b.kategori}</span>
         <span class="legend-pct">${pct}%</span>
+        <button class="legend-edit-btn" onclick="event.stopPropagation(); openBudgetSheet('${escAttr(b.kategori)}')" title="Atur budget">✏️</button>
       </div>`;
     }).join('');
   } else {
@@ -1880,7 +1909,7 @@ function renderLaporanView(data){
 
   const top = byCat.slice(0,5);
   document.getElementById('lapTopExpenses').innerHTML = top.length ? top.map(function(c,i){
-    return `<div class="top-exp-row">
+    return `<div class="top-exp-row clickable" onclick="openTopExpenseDetailSheet('${escAttr(c.kategori)}','${escAttr(c.icon)}')">
       <div class="rank-badge">${i+1}</div>
       <div class="top-exp-mid">
         <div class="top-exp-name">${c.icon} ${c.kategori}</div>
@@ -1981,7 +2010,7 @@ function openRingkasanSheet(tipe){
     listEl.innerHTML = byCat.map(function(c, i){
       const barColor = isIn ? 'var(--green)' : DONUT_COLORS[i % DONUT_COLORS.length];
       return `
-      <div class="budget-row">
+      <div class="budget-row clickable" onclick="openKategoriBulanIniDetailSheet('${escAttr(c.kategori)}','${isIn?'Pemasukan':'Pengeluaran'}','${escAttr(c.icon)}')">
         <div class="budget-row-head">
           <span>${c.icon} ${c.kategori}</span>
           <span>${formatRupiah(c.jumlah)}</span>
@@ -1989,7 +2018,7 @@ function openRingkasanSheet(tipe){
         <div class="budget-bar-track">
           <div class="budget-bar-fill" style="width:${c.persen}%;background:${barColor};"></div>
         </div>
-        <div class="budget-row-sub">${c.persen}% dari total</div>
+        <div class="budget-row-sub">${c.persen}% dari total · Tap untuk lihat transaksi</div>
       </div>`;
     }).join('');
   }
@@ -2000,6 +2029,126 @@ function openRingkasanSheet(tipe){
 function closeRingkasanSheet(){
   document.getElementById('overlay6').classList.remove('show');
   document.getElementById('sheetRingkasan').classList.remove('show');
+}
+
+/* ---------------- DETAIL TRANSAKSI (klik kategori / tanggal / periode) ---------------- */
+// opts: { title, filterFn(data) -> rows[], emptyMsg }
+function openDetailTrxSheet(opts){
+  state.detailTrx = opts;
+  renderDetailTrxSheet();
+  document.getElementById('overlay16').classList.add('show');
+  document.getElementById('sheetDetailTrx').classList.add('show');
+}
+function closeDetailTrxSheet(){
+  document.getElementById('overlay16').classList.remove('show');
+  document.getElementById('sheetDetailTrx').classList.remove('show');
+  state.detailTrx = null;
+}
+function renderDetailTrxSheet(){
+  const opts = state.detailTrx;
+  const data = state.dashboard;
+  if (!opts || !data) return;
+
+  const rows = (opts.filterFn ? opts.filterFn(data) : (opts.rows || []))
+    .slice()
+    .sort(function(a,b){ return new Date(b.tanggal) - new Date(a.tanggal); });
+
+  document.getElementById('detailTrxTitle').textContent = opts.title;
+
+  let masuk = 0, keluar = 0;
+  rows.forEach(function(r){ if (r.tipe === 'Pemasukan') masuk += r.jumlah; else keluar += r.jumlah; });
+
+  const summaryEl = document.getElementById('detailTrxSummary');
+  if (masuk > 0 && keluar > 0){
+    summaryEl.innerHTML = `
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink-soft);font-weight:700;">Pemasukan</div>
+          <div style="font-size:17px;font-weight:800;color:var(--green);">${formatRupiah(masuk)}</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--ink-soft);font-weight:700;">Pengeluaran</div>
+          <div style="font-size:17px;font-weight:800;color:var(--red);">${formatRupiah(keluar)}</div>
+        </div>
+      </div>`;
+  } else if (masuk > 0 || keluar > 0){
+    const color = masuk > 0 ? 'var(--green)' : 'var(--red)';
+    summaryEl.innerHTML = `<div style="text-align:center;font-size:24px;font-weight:800;color:${color};">${formatRupiah(masuk + keluar)}</div>`;
+  } else {
+    summaryEl.innerHTML = '';
+  }
+
+  document.getElementById('detailTrxCount').textContent = rows.length + ' transaksi';
+  document.getElementById('detailTrxList').innerHTML = rows.length
+    ? renderRiwayatRows(rows)
+    : `<div class="empty-note">${opts.emptyMsg || 'Belum ada transaksi.'}</div>`;
+}
+
+// Klik satu tanggal di kalender "Aktivitas Bulan Ini" -> semua transaksi hari itu.
+function openDayDetailSheet(y, m, d){
+  const label = new Date(y, m, d).toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  openDetailTrxSheet({
+    title: '📅 ' + label,
+    filterFn: function(data){
+      return data.riwayat.filter(function(r){
+        if (r.isAdjustment) return false;
+        const rd = new Date(r.tanggal);
+        return rd.getFullYear() === y && rd.getMonth() === m && rd.getDate() === d;
+      });
+    },
+    emptyMsg: 'Tidak ada transaksi pada tanggal ini.'
+  });
+}
+
+// Klik kategori di pie chart / rincian pengeluaran & pemasukan bulan ini.
+function openKategoriBulanIniDetailSheet(kategori, tipe, icon){
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  openDetailTrxSheet({
+    title: (icon ? icon + ' ' : '') + kategori,
+    filterFn: function(data){
+      return data.riwayat.filter(function(r){
+        if (r.isAdjustment || r.tipe !== tipe || r.kategori !== kategori) return false;
+        const d = new Date(r.tanggal);
+        return d.getFullYear() === y && d.getMonth() === m;
+      });
+    },
+    emptyMsg: 'Belum ada transaksi kategori ini bulan ini.'
+  });
+}
+
+// Klik bar/titik pada "Tren Arus Kas" atau "Pemasukan vs Pengeluaran (6 Bulan)".
+// key harian: "YYYY-M-D" (3 bagian), key bulanan: "YYYY-M" (2 bagian).
+function openTrendBucketDetailSheet(key, label){
+  const parts = String(key).split('-').map(Number);
+  const isDaily = parts.length === 3;
+  openDetailTrxSheet({
+    title: '📊 ' + label,
+    filterFn: function(data){
+      return data.riwayat.filter(function(r){
+        if (r.isAdjustment) return false;
+        const d = new Date(r.tanggal);
+        if (isDaily) return d.getFullYear() === parts[0] && d.getMonth() === parts[1] && d.getDate() === parts[2];
+        return d.getFullYear() === parts[0] && d.getMonth() === parts[1];
+      });
+    },
+    emptyMsg: 'Tidak ada transaksi pada periode ini.'
+  });
+}
+
+// Klik baris "Kategori Terboros" di Laporan -> transaksi kategori itu pada periode filter yang aktif.
+function openTopExpenseDetailSheet(kategori, icon){
+  const filterKey = state.report.filter;
+  openDetailTrxSheet({
+    title: (icon ? icon + ' ' : '') + kategori,
+    filterFn: function(data){
+      const { start, end } = getPeriodRange(filterKey);
+      return filterRiwayatByRange(data.riwayat, start, end).filter(function(r){
+        return r.tipe === 'Pengeluaran' && r.kategori === kategori;
+      });
+    },
+    emptyMsg: 'Tidak ada transaksi kategori ini pada periode ini.'
+  });
 }
 
 /* ---------------- MASTER RENDER ---------------- */
@@ -2025,6 +2174,7 @@ async function confirmDeleteTransaksi(id){
   try {
     const data = await postAction({ action:"deleteTransaksi", id });
     renderAll(data);
+    if (state.detailTrx) renderDetailTrxSheet();
     showToast("Transaksi dihapus");
   } catch(err){ showToast("Gagal: " + err.message); }
 }
