@@ -80,6 +80,12 @@
     font-size:10.5px;font-weight:800;letter-spacing:0.06em;
     color:rgba(255,255,255,0.55);text-transform:uppercase;
   }
+  .hero-top-row{display:flex;justify-content:space-between;align-items:center;}
+  .hero-eye-btn{
+    background:rgba(255,255,255,0.1);border:none;border-radius:50%;
+    width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+    font-size:13px;flex-shrink:0;line-height:1;
+  }
   .hero-amount{font-size:30px;font-weight:800;margin:6px 0 2px;letter-spacing:-0.5px;}
   .hero-sub{font-size:12px;color:rgba(255,255,255,0.55);margin:0 0 16px;font-weight:600;}
   .hero-row{display:flex;justify-content:space-between;gap:14px;}
@@ -290,6 +296,7 @@
   .wallet-row-name{font-size:13.5px;font-weight:800;color:var(--ink);}
   .wallet-row-tap{font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:1px;}
   .wallet-row-saldo{font-size:14px;font-weight:800;text-align:right;flex-shrink:0;}
+  .wallet-row-adjust{background:none;border:none;color:var(--ink-soft);font-size:15px;padding:2px 4px;flex-shrink:0;}
   .wallet-row-del{background:none;border:none;color:#d9a3b4;font-size:14px;padding:2px 0 2px 4px;flex-shrink:0;}
 
   /* kategori grid page */
@@ -503,7 +510,10 @@
     </div>
 
     <div class="hero-card">
-      <div class="hero-label">⚡ Sekilas Hari Ini</div>
+      <div class="hero-top-row">
+        <div class="hero-label">⚡ Sekilas Hari Ini</div>
+        <button type="button" class="hero-eye-btn" id="saldoEyeBtn" onclick="toggleSaldoVisibility()" title="Sembunyikan/tampilkan saldo">👁️</button>
+      </div>
       <div class="hero-amount" id="saldoTotal">Rp 0</div>
       <p class="hero-sub">Total saldo semua dompet</p>
       <div class="hero-row">
@@ -809,9 +819,13 @@
     <input type="file" id="notaFileInputKamera" accept="image/*" capture="environment" style="display:none" onchange="handleNotaFile(this)">
     <input type="file" id="notaFileInputGaleri" accept="image/*" style="display:none" onchange="handleNotaFile(this)">
 
-    <div class="type-toggle">
+    <div class="type-toggle" id="tipeToggleWrap">
       <button class="active out" id="btnOut" onclick="setTipe('Pengeluaran')">Pengeluaran</button>
       <button id="btnIn" onclick="setTipe('Pemasukan')">Pemasukan</button>
+    </div>
+    <div class="insight" id="transferHint" style="display:none;margin-bottom:18px;">
+      <span class="ic">🔁</span>
+      <span>Transfer antar dompet sendiri: saldo dompet asal otomatis berkurang & dompet tujuan otomatis bertambah, cukup 1x simpan.</span>
     </div>
 
     <div class="amount-row">
@@ -826,8 +840,13 @@
       <input type="date" id="tanggalInput" oninput="onTanggalChange()">
     </div>
 
-    <div class="field-label">Dompet</div>
+    <div class="field-label" id="dompetFieldLabel">Dompet</div>
     <div class="chip-row" id="dompetChips"></div>
+
+    <div id="dompetTujuanWrap" style="display:none;">
+      <div class="field-label">Ke Dompet</div>
+      <div class="chip-row" id="dompetTujuanChips"></div>
+    </div>
 
     <div class="field-label" id="katLabel">Kategori</div>
     <input class="text-input" id="kategoriSearchInput" placeholder="🔍 Cari kategori…" oninput="renderKategoriGridUI()" style="margin-bottom:10px;">
@@ -1232,6 +1251,10 @@ let state = {
   budgetKategoriSel: null,
   aktivitasMonthOffset: 0,
   detailTrx: null,
+  saldoHidden: (function(){
+    try { return localStorage.getItem('dompetku_saldoHidden') === '1'; }
+    catch(e){ return false; }
+  })(),
 
   // --- Menu Utama tambahan ---
   jualan: null,
@@ -1257,6 +1280,25 @@ const LAP_FILTERS = [
 function formatRupiah(n){
   n = Math.round(Number(n) || 0);
   return "Rp " + n.toLocaleString("id-ID");
+}
+// Sama seperti formatRupiah, tapi disamarkan jadi "Rp ••••••" kalau mode
+// sembunyikan saldo (state.saldoHidden) sedang aktif. Dipakai di semua
+// tempat yang menampilkan nominal saldo/pemasukan/pengeluaran/dompet
+// supaya bisa disembunyikan serentak lewat 1 tombol mata di kartu Total Saldo.
+function maskRupiah(n){
+  return state.saldoHidden ? "Rp •••••••" : formatRupiah(n);
+}
+function toggleSaldoVisibility(){
+  state.saldoHidden = !state.saldoHidden;
+  try { localStorage.setItem('dompetku_saldoHidden', state.saldoHidden ? '1' : '0'); } catch(e){}
+  // Cukup render ulang Beranda (hero card: total saldo, pemasukan,
+  // pengeluaran) & tab Dompet (nominal per dompet) — 2 tempat yang
+  // menampilkan nominal saldo sesuai permintaan. Riwayat & Laporan tetap
+  // tampil normal (bukan ringkasan saldo, jadi tidak ikut disamarkan).
+  if (state.dashboard){
+    renderBeranda(state.dashboard);
+    renderDompetView(state.dashboard);
+  }
 }
 function formatAmount(el){
   let raw = el.value.replace(/[^\d]/g,"");
@@ -1309,10 +1351,7 @@ function initTransaksiSheetUI(){
 
   if (!state.dompet && data.wallets.length) state.dompet = data.wallets[0].nama;
 
-  const chipWrap = document.getElementById('dompetChips');
-  chipWrap.innerHTML = data.wallets.map(w =>
-    `<button class="chip ${w.nama===state.dompet?'active':''}" data-w="${w.nama}" onclick="setDompet('${escAttr(w.nama)}')">${w.icon} ${w.nama}</button>`
-  ).join('') || '<span class="empty-note">Belum ada dompet, tambah dulu di menu Dompet</span>';
+  renderDompetChips();
 
   const availableKat = getKategoriForTipe(state.tipe);
   if ((!state.kategori || !availableKat.some(c=>c.nama===state.kategori)) && availableKat.length){
@@ -1320,6 +1359,7 @@ function initTransaksiSheetUI(){
   }
   document.getElementById('kategoriSearchInput').value = '';
   renderKategoriGridUI();
+  updateTipeUIForKategori();
 
   document.getElementById('tanggalInput').value = state.tanggal;
   document.getElementById('tanggalDisplay').textContent = formatTanggalDisplay(state.tanggal);
@@ -1335,6 +1375,55 @@ function getKategoriForTipe(tipe){
     const t = c.tipe || 'Pengeluaran';
     return t === 'Keduanya' || t === tipe;
   });
+}
+// Tipe kategori (Pengeluaran/Pemasukan/Keduanya) untuk 1 nama kategori.
+function getKategoriTipe(nama){
+  const data = state.dashboard;
+  if (!data) return 'Pengeluaran';
+  const k = data.kategori.find(c=>c.nama===nama);
+  return k ? (k.tipe || 'Pengeluaran') : 'Pengeluaran';
+}
+// True kalau kategori yang sedang dipilih bertipe "Keduanya" (mis. Transfer
+// Antarkas) — dipakai untuk mode pemindahan uang antar dompet sendiri.
+function isKategoriTransfer(nama){
+  return getKategoriTipe(nama) === 'Keduanya';
+}
+
+function renderDompetChips(){
+  const data = state.dashboard;
+  const chipWrap = document.getElementById('dompetChips');
+  chipWrap.innerHTML = data.wallets.map(w =>
+    `<button class="chip ${w.nama===state.dompet?'active':''}" data-w="${w.nama}" onclick="setDompet('${escAttr(w.nama)}')">${w.icon} ${w.nama}</button>`
+  ).join('') || '<span class="empty-note">Belum ada dompet, tambah dulu di menu Dompet</span>';
+}
+
+// Chip dompet tujuan untuk mode Transfer Antarkas — semua dompet KECUALI
+// dompet asal yang sedang dipilih, supaya tidak bisa transfer ke dompet
+// yang sama.
+function renderDompetTujuanChips(){
+  const data = state.dashboard;
+  if (!data) return;
+  const pool = data.wallets.filter(w => w.nama !== state.dompet);
+  if (!state.dompetTujuan || !pool.some(w=>w.nama===state.dompetTujuan)){
+    state.dompetTujuan = pool.length ? pool[0].nama : null;
+  }
+  const wrap = document.getElementById('dompetTujuanChips');
+  wrap.innerHTML = pool.map(w =>
+    `<button class="chip ${w.nama===state.dompetTujuan?'active':''}" data-w="${w.nama}" onclick="setDompetTujuan('${escAttr(w.nama)}')">${w.icon} ${w.nama}</button>`
+  ).join('') || '<span class="empty-note">Tambah dompet lain dulu supaya bisa transfer</span>';
+}
+
+// Menyesuaikan tampilan form Tambah Transaksi sesuai kategori yang dipilih:
+// kalau kategori bertipe "Keduanya" (Transfer Antarkas), sembunyikan toggle
+// Pengeluaran/Pemasukan (tidak relevan, transfer otomatis membuat keduanya)
+// dan tampilkan chip "Ke Dompet" untuk memilih dompet tujuan perpindahan uang.
+function updateTipeUIForKategori(){
+  const transferMode = isKategoriTransfer(state.kategori);
+  document.getElementById('tipeToggleWrap').style.display = transferMode ? 'none' : 'flex';
+  document.getElementById('transferHint').style.display = transferMode ? 'flex' : 'none';
+  document.getElementById('dompetTujuanWrap').style.display = transferMode ? 'block' : 'none';
+  document.getElementById('dompetFieldLabel').textContent = transferMode ? 'Dari Dompet' : 'Dompet';
+  if (transferMode) renderDompetTujuanChips();
 }
 
 function renderKategoriGridUI(){
@@ -1369,10 +1458,20 @@ function setTipe(t){
   }
   document.getElementById('kategoriSearchInput').value = '';
   renderKategoriGridUI();
+  updateTipeUIForKategori();
 }
 function setDompet(w){
   state.dompet = w;
   document.querySelectorAll('#dompetChips .chip').forEach(el=>{
+    el.classList.toggle('active', el.dataset.w === w);
+  });
+  // Kalau lagi mode transfer, dompet tujuan tidak boleh sama dengan dompet
+  // asal yang baru dipilih -> render ulang pilihan dompet tujuan.
+  if (isKategoriTransfer(state.kategori)) renderDompetTujuanChips();
+}
+function setDompetTujuan(w){
+  state.dompetTujuan = w;
+  document.querySelectorAll('#dompetTujuanChips .chip').forEach(el=>{
     el.classList.toggle('active', el.dataset.w === w);
   });
 }
@@ -1381,6 +1480,7 @@ function setKategori(k){
   document.querySelectorAll('#kategoriGrid .kat-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.k === k);
   });
+  updateTipeUIForKategori();
 }
 function onTanggalChange(){
   const val = document.getElementById('tanggalInput').value;
@@ -1529,9 +1629,12 @@ async function fetchAction(action){
 
 /* ---------------- RENDER: BERANDA ---------------- */
 function renderBeranda(data){
-  document.getElementById('saldoTotal').textContent = formatRupiah(data.saldoTotal);
-  document.getElementById('pemasukanBulanIni').textContent = formatRupiah(data.bulanIni.pemasukan);
-  document.getElementById('pengeluaranBulanIni').textContent = formatRupiah(data.bulanIni.pengeluaran);
+  const eyeBtn = document.getElementById('saldoEyeBtn');
+  if (eyeBtn) eyeBtn.textContent = state.saldoHidden ? '🙈' : '👁️';
+
+  document.getElementById('saldoTotal').textContent = maskRupiah(data.saldoTotal);
+  document.getElementById('pemasukanBulanIni').textContent = maskRupiah(data.bulanIni.pemasukan);
+  document.getElementById('pengeluaranBulanIni').textContent = maskRupiah(data.bulanIni.pengeluaran);
   document.getElementById('trxCount').textContent = data.transaksiCount + " transaksi";
 
   const totalArus = data.bulanIni.pemasukan + data.bulanIni.pengeluaran;
@@ -1539,10 +1642,10 @@ function renderBeranda(data){
   document.getElementById('heroBarFill').style.width = pct + "%";
 
   document.getElementById('walletScroll').innerHTML = data.wallets.map(w => `
-    <div class="wallet-card">
+    <div class="wallet-card" onclick="openWalletDetailSheet('${escAttr(w.nama)}','${w.icon}')">
       <div class="wallet-icon">${w.icon}</div>
       <div class="wallet-name">${w.nama}</div>
-      <div class="wallet-saldo">${formatRupiah(w.saldo)}</div>
+      <div class="wallet-saldo">${maskRupiah(w.saldo)}</div>
     </div>
   `).join('') + `
     <button class="wallet-add-card" onclick="openAddWalletSheet()">
@@ -1684,15 +1787,20 @@ function renderTrxRow(r){
   const tglStr = tgl.toLocaleDateString('id-ID', { day:'2-digit', month:'short' }) + ' · ' +
                  tgl.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
   const label = r.isAdjustment ? (r.catatan || 'Penyesuaian saldo') : (r.catatan ? r.catatan : r.kategori);
+  // Transaksi Transfer Antarkas: tampilkan arah perpindahan dompetnya
+  // (Cash → BCA) di baris meta, bukan cuma nama 1 dompet.
+  const metaStr = (r.isTransfer && r.transferDompetLawan)
+    ? (r.tipe === 'Pemasukan' ? `${r.transferDompetLawan} → ${r.dompet}` : `${r.dompet} → ${r.transferDompetLawan}`) + ' · ' + tglStr
+    : `${r.dompet} · ${tglStr}`;
   return `
     <div class="trx-row">
       <div class="trx-icon">${r.icon}</div>
       <div class="trx-mid">
         <div class="trx-cat">${label}</div>
-        <div class="trx-meta">${r.dompet} · ${tglStr}</div>
+        <div class="trx-meta">${metaStr}</div>
       </div>
       <div class="trx-amt ${r.tipe==='Pemasukan'?'in':'out'}">${r.tipe==='Pemasukan'?'+':'-'} ${formatRupiah(r.jumlah)}</div>
-      <button class="trx-del" onclick="confirmDeleteTransaksi('${r.id}')">🗑️</button>
+      <button class="trx-del" onclick="confirmDeleteTransaksi('${r.id}', ${r.isTransfer ? 'true' : 'false'})">🗑️</button>
     </div>
   `;
 }
@@ -1766,12 +1874,13 @@ function renderDompetView(data){
   }
   el.innerHTML = data.wallets.map(w => `
     <div class="wallet-row-card">
-      <div class="wallet-row-icon" onclick="openAdjustSheet('${escAttr(w.nama)}')">${w.icon}</div>
-      <div class="wallet-row-mid" onclick="openAdjustSheet('${escAttr(w.nama)}')">
+      <div class="wallet-row-icon" onclick="openWalletDetailSheet('${escAttr(w.nama)}','${w.icon}')">${w.icon}</div>
+      <div class="wallet-row-mid" onclick="openWalletDetailSheet('${escAttr(w.nama)}','${w.icon}')">
         <div class="wallet-row-name">${w.nama}</div>
-        <div class="wallet-row-tap">Tap untuk atur saldo</div>
+        <div class="wallet-row-tap">Tap untuk lihat transaksi</div>
       </div>
-      <div class="wallet-row-saldo" onclick="openAdjustSheet('${escAttr(w.nama)}')">${formatRupiah(w.saldo)}</div>
+      <div class="wallet-row-saldo" onclick="openWalletDetailSheet('${escAttr(w.nama)}','${w.icon}')">${maskRupiah(w.saldo)}</div>
+      <button class="wallet-row-adjust" onclick="openAdjustSheet('${escAttr(w.nama)}')" title="Atur saldo">⚖️</button>
       <button class="wallet-row-del" onclick="confirmDeleteWallet('${w.id}','${escAttr(w.nama)}')">🗑️</button>
     </div>
   `).join('');
@@ -2419,6 +2528,19 @@ function renderDetailTrxSheet(){
     : `<div class="empty-note">${opts.emptyMsg || 'Belum ada transaksi.'}</div>`;
 }
 
+// Klik kartu dompet (di Beranda maupun tab Dompet) -> semua transaksi yang
+// terjadi di dompet itu (termasuk penyesuaian saldo & transfer antar
+// dompet, karena semuanya memengaruhi saldo dompet ini).
+function openWalletDetailSheet(namaWallet, icon){
+  openDetailTrxSheet({
+    title: (icon ? icon + ' ' : '') + namaWallet,
+    filterFn: function(data){
+      return data.riwayat.filter(function(r){ return r.dompet === namaWallet; });
+    },
+    emptyMsg: 'Belum ada transaksi pada dompet ini.'
+  });
+}
+
 // Klik satu tanggal di kalender "Aktivitas Bulan Ini" -> semua transaksi hari itu.
 function openDayDetailSheet(y, m, d){
   const label = new Date(y, m, d).toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
@@ -2524,13 +2646,16 @@ function renderAll(data){
 }
 
 /* ---------------- DELETE HANDLERS ---------------- */
-async function confirmDeleteTransaksi(id){
-  if (!confirm("Hapus transaksi ini?")) return;
+async function confirmDeleteTransaksi(id, isTransfer){
+  const msg = isTransfer
+    ? "Ini transaksi Transfer Antarkas — hapus akan menghapus KEDUA sisi transfernya (dompet asal & tujuan). Lanjutkan?"
+    : "Hapus transaksi ini?";
+  if (!confirm(msg)) return;
   try {
     const data = await postAction({ action:"deleteTransaksi", id });
     renderAll(data);
     if (state.detailTrx) renderDetailTrxSheet();
-    showToast("Transaksi dihapus");
+    showToast(isTransfer ? "Transfer dihapus" : "Transaksi dihapus");
   } catch(err){ showToast("Gagal: " + err.message); }
 }
 async function confirmDeleteWallet(id, nama){
@@ -2559,12 +2684,28 @@ async function submitTransaksi(){
   if (!state.kategori){ showToast("Pilih kategori dulu ya"); return; }
   if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
 
+  const transferMode = isKategoriTransfer(state.kategori);
+  if (transferMode && !state.dompetTujuan){ showToast("Pilih dompet tujuan dulu ya"); return; }
+  if (transferMode && state.dompetTujuan === state.dompet){ showToast("Dompet asal & tujuan tidak boleh sama"); return; }
+
   const btn = document.getElementById('saveBtn');
   btn.disabled = true;
   btn.textContent = "Menyimpan...";
 
   try {
-    const payload = {
+    // Kategori "Transfer Antarkas" (tipe "Keduanya") -> 1x input otomatis
+    // dibuatkan 2 transaksi berpasangan (Pengeluaran di dompet asal &
+    // Pemasukan di dompet tujuan) lewat action addTransferAntarkas, supaya
+    // user tidak perlu mencatat manual 2x.
+    const payload = transferMode ? {
+      action: "addTransferAntarkas",
+      dompetAsal: state.dompet,
+      dompetTujuan: state.dompetTujuan,
+      jumlah: jumlah,
+      kategori: state.kategori,
+      catatan: document.getElementById('catatanInput').value.trim(),
+      tanggal: document.getElementById('tanggalInput').value || state.tanggal
+    } : {
       action: "addTransaksi",
       tipe: state.tipe,
       jumlah: jumlah,
@@ -2575,7 +2716,7 @@ async function submitTransaksi(){
     };
     const data = await postAction(payload);
     renderAll(data);
-    showToast("Transaksi tersimpan ✅");
+    showToast(transferMode ? "Transfer tersimpan ✅" : "Transaksi tersimpan ✅");
     closeSheet();
     document.getElementById('jumlahInput').value = "";
     document.getElementById('catatanInput').value = "";
