@@ -423,16 +423,25 @@
     flex:1;border:1.5px dashed var(--accent);background:var(--accent-soft);color:var(--accent);
     border-radius:12px;padding:11px 10px;font-size:12px;font-weight:800;text-align:center;
   }
-  .wallet-icon-pos-pad{display:none;margin:10px 0 4px;text-align:center;}
-  .wallet-icon-pos-pad.show{display:block;}
+  .wallet-icon-crop-wrap{display:none;margin:10px 0 4px;text-align:center;}
+  .wallet-icon-crop-wrap.show{display:block;}
   .wallet-icon-pos-hint{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-bottom:8px;}
-  .wallet-icon-pos-grid{display:inline-grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px);gap:4px;}
-  .wallet-icon-pos-grid button{
-    border:1.5px solid var(--line);background:#fff;border-radius:9px;color:var(--ink-soft);
-    font-size:13px;display:flex;align-items:center;justify-content:center;
+  .wallet-icon-crop-stage{
+    width:180px;height:180px;margin:0 auto;border-radius:50%;overflow:hidden;position:relative;
+    background:var(--accent-soft);border:1.5px solid var(--line);touch-action:none;cursor:grab;
   }
-  .wallet-icon-pos-grid button.mid{background:var(--accent-soft);}
-  .wallet-icon-pos-grid button.reset-pos{color:var(--accent);font-size:11px;font-weight:800;}
+  .wallet-icon-crop-stage.dragging{cursor:grabbing;}
+  .wallet-icon-crop-stage img{
+    position:absolute;top:0;left:0;max-width:none;max-height:none;
+    user-select:none;-webkit-user-drag:none;transform-origin:0 0;pointer-events:none;
+  }
+  .wallet-icon-zoom-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:12px;}
+  .wallet-icon-zoom-row input[type=range]{flex:1;max-width:170px;}
+  .wallet-icon-zoom-btn{
+    width:26px;height:26px;flex-shrink:0;border:1.5px solid var(--line);background:#fff;
+    border-radius:50%;color:var(--ink-soft);font-size:16px;font-weight:800;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
   .wallet-icon-remove-btn{background:none;border:none;color:var(--red);font-size:11px;font-weight:800;padding:6px 0 0;}
 
   .save-btn{
@@ -1018,18 +1027,15 @@
     <input type="file" id="walletIconFileInput" accept="image/*" style="display:none" onchange="handleWalletIconFile(this)">
     <button type="button" class="wallet-icon-remove-btn" id="walletIconRemoveBtn" style="display:none;" onclick="removeWalletIconPhoto()">Hapus foto, pakai icon biasa</button>
 
-    <div class="wallet-icon-pos-pad" id="walletIconPosPad">
-      <p class="wallet-icon-pos-hint">Atur posisi foto supaya pas di lingkaran icon</p>
-      <div class="wallet-icon-pos-grid">
-        <button type="button" onclick="setWalletIconPos(0,0)">↖</button>
-        <button type="button" onclick="setWalletIconPos(50,0)">↑</button>
-        <button type="button" onclick="setWalletIconPos(100,0)">↗</button>
-        <button type="button" onclick="setWalletIconPos(0,50)">←</button>
-        <button type="button" class="mid" onclick="setWalletIconPos(50,50)">•</button>
-        <button type="button" onclick="setWalletIconPos(100,50)">→</button>
-        <button type="button" onclick="setWalletIconPos(0,100)">↙</button>
-        <button type="button" onclick="setWalletIconPos(50,100)">↓</button>
-        <button type="button" onclick="setWalletIconPos(100,100)">↘</button>
+    <div class="wallet-icon-crop-wrap" id="walletIconCropWrap">
+      <p class="wallet-icon-pos-hint">Geser fotonya (bisa ke segala arah) &amp; atur zoom supaya pas di lingkaran</p>
+      <div class="wallet-icon-crop-stage" id="walletIconCropStage">
+        <img id="walletIconCropImg" draggable="false" alt="">
+      </div>
+      <div class="wallet-icon-zoom-row">
+        <button type="button" class="wallet-icon-zoom-btn" onclick="stepWalletIconZoom(-15)">−</button>
+        <input type="range" id="walletIconZoomSlider" min="100" max="400" value="100" oninput="onWalletIconZoomInput(this.value)">
+        <button type="button" class="wallet-icon-zoom-btn" onclick="stepWalletIconZoom(15)">+</button>
       </div>
     </div>
 
@@ -1838,6 +1844,7 @@ function openAddWalletSheet(){
   document.getElementById('walletSaldoInput').value = "";
   document.getElementById('walletSaldoAwalWrap').style.display = 'block';
   renderIconPicker('walletIconPicker', WALLET_ICON_POOL, state.walletIconSel, 'pickWalletIcon');
+  resetWalletIconCrop();
   renderWalletIconPreview();
   document.getElementById('overlay3').classList.add('show');
   document.getElementById('sheetWallet').classList.add('show');
@@ -1852,14 +1859,22 @@ function openEditWalletSheet(id){
   if (!w) return;
   state.walletEditId = id;
   state.walletIconSel = w.icon || WALLET_ICON_POOL[0];
-  state.walletIconPosX = w.iconPosX != null ? w.iconPosX : 50;
-  state.walletIconPosY = w.iconPosY != null ? w.iconPosY : 50;
+  state.walletIconPosX = 50;
+  state.walletIconPosY = 50;
   document.getElementById('walletSheetTitle').textContent = 'Edit Dompet';
   document.getElementById('saveWalletBtn').textContent = 'Simpan Perubahan';
   document.getElementById('walletNamaInput').value = w.nama;
   document.getElementById('walletSaldoInput').value = "";
   document.getElementById('walletSaldoAwalWrap').style.display = 'none';
   renderIconPicker('walletIconPicker', WALLET_ICON_POOL, isWalletPhotoIcon(state.walletIconSel) ? null : state.walletIconSel, 'pickWalletIcon');
+  if (isWalletPhotoIcon(state.walletIconSel)){
+    // Foto yang sudah tersimpan dianggap sebagai gambar persegi yang sudah
+    // pas (hasil crop sebelumnya) — muat ulang ke stage biar user masih bisa
+    // geser/zoom lebih lanjut kalau mau, atau ganti foto baru dari galeri.
+    loadWalletIconCropSource(state.walletIconSel);
+  } else {
+    resetWalletIconCrop();
+  }
   renderWalletIconPreview();
   document.getElementById('overlay3').classList.add('show');
   document.getElementById('sheetWallet').classList.add('show');
@@ -1868,19 +1883,19 @@ function closeWalletSheet(){
   document.getElementById('overlay3').classList.remove('show');
   document.getElementById('sheetWallet').classList.remove('show');
 }
-// Preview icon dompet (emoji ATAU foto dengan posisi crop-nya) di sheet Tambah/Edit Dompet.
+// Preview icon dompet (emoji ATAU foto hasil crop) di sheet Tambah/Edit Dompet.
 function renderWalletIconPreview(){
   const prev = document.getElementById('walletIconPreview');
-  const posPad = document.getElementById('walletIconPosPad');
+  const cropWrap = document.getElementById('walletIconCropWrap');
   const removeBtn = document.getElementById('walletIconRemoveBtn');
   const isPhoto = isWalletPhotoIcon(state.walletIconSel);
   if (isPhoto){
-    prev.innerHTML = `<img src="${state.walletIconSel}" style="object-position:${state.walletIconPosX}% ${state.walletIconPosY}%;">`;
-    posPad.classList.add('show');
+    prev.innerHTML = `<img src="${state.walletIconSel}">`;
+    cropWrap.classList.add('show');
     removeBtn.style.display = 'block';
   } else {
     prev.textContent = state.walletIconSel;
-    posPad.classList.remove('show');
+    cropWrap.classList.remove('show');
     removeBtn.style.display = 'none';
   }
 }
@@ -1893,13 +1908,10 @@ async function handleWalletIconFile(inputEl){
   if (!file) return;
   try {
     const dataUrl = await fileToDataURL(file);
-    state.walletIconSel = dataUrl;
-    state.walletIconPosX = 50;
-    state.walletIconPosY = 50;
     document.querySelectorAll('#walletIconPicker .icon-opt').forEach(el => el.classList.remove('active'));
-    renderWalletIconPreview();
+    await loadWalletIconCropSource(dataUrl);
   } catch(err){
-    showToast("Gagal membaca foto: " + err.message);
+    showToast("Gagal membaca foto: " + (err && err.message ? err.message : err));
   }
 }
 function fileToDataURL(file){
@@ -1910,20 +1922,185 @@ function fileToDataURL(file){
     reader.readAsDataURL(file);
   });
 }
-// Atur posisi foto icon dompet (object-position CSS) lewat pad panah 3x3,
-// supaya foto (mis. logo bank) bisa digeser kiri/kanan/atas/bawah biar pas
-// di lingkaran icon walaupun rasio fotonya bukan persegi.
-function setWalletIconPos(x, y){
-  state.walletIconPosX = x;
-  state.walletIconPosY = y;
-  renderWalletIconPreview();
-}
 function removeWalletIconPhoto(){
   state.walletIconSel = WALLET_ICON_POOL[0];
   state.walletIconPosX = 50;
   state.walletIconPosY = 50;
+  resetWalletIconCrop();
   renderIconPicker('walletIconPicker', WALLET_ICON_POOL, state.walletIconSel, 'pickWalletIcon');
   renderWalletIconPreview();
+}
+
+/* ============ Wallet icon crop (geser + zoom bebas) ============
+   Foto dari galeri sering rasionya nggak persegi & ukurannya gede, jadi
+   kalau langsung dipasang sebagai icon bulat, hasilnya kepotong sembarangan
+   / kelihatan kezoom banget. Di sini user bisa geser fotonya bebas ke
+   segala arah (drag) dan atur zoom in/out lewat slider, lalu hasil crop-nya
+   "dipanggang" jadi satu gambar persegi (dataURL) yang otomatis di-resize
+   supaya rapi & ringan sebelum disimpan sebagai icon dompet. */
+const WALLET_ICON_STAGE = 180; // ukuran area crop di layar (px, css)
+const WALLET_ICON_OUTPUT = 300; // resolusi hasil crop yang disimpan (px)
+let walletIconCrop = {
+  img: null,       // objek Image() sumber foto
+  naturalW: 0,
+  naturalH: 0,
+  baseScale: 1,     // scale supaya foto full-cover stage saat zoom 1x
+  zoom: 1,          // 1..4, dikali baseScale
+  offsetX: 0,       // posisi kiri foto (css px) relatif ke stage
+  offsetY: 0,
+  ready: false
+};
+
+function resetWalletIconCrop(){
+  walletIconCrop = { img: null, naturalW: 0, naturalH: 0, baseScale: 1, zoom: 1, offsetX: 0, offsetY: 0, ready: false };
+  const cropImg = document.getElementById('walletIconCropImg');
+  if (cropImg) cropImg.removeAttribute('src');
+  const slider = document.getElementById('walletIconZoomSlider');
+  if (slider) slider.value = 100;
+}
+
+function loadWalletIconCropSource(dataUrl){
+  return new Promise(function(resolve, reject){
+    const img = new Image();
+    img.onload = function(){
+      walletIconCrop.img = img;
+      walletIconCrop.naturalW = img.naturalWidth || img.width;
+      walletIconCrop.naturalH = img.naturalHeight || img.height;
+      walletIconCrop.zoom = 1;
+      walletIconCrop.baseScale = Math.max(
+        WALLET_ICON_STAGE / walletIconCrop.naturalW,
+        WALLET_ICON_STAGE / walletIconCrop.naturalH
+      );
+      walletIconCrop.ready = true;
+      const cropImgEl = document.getElementById('walletIconCropImg');
+      cropImgEl.src = dataUrl;
+      centerWalletIconCrop();
+      const slider = document.getElementById('walletIconZoomSlider');
+      if (slider) slider.value = 100;
+      applyWalletIconCropTransform();
+      bakeWalletIconCrop();
+      resolve();
+    };
+    img.onerror = function(){ reject(new Error("File bukan gambar yang valid")); };
+    img.src = dataUrl;
+  });
+}
+
+function walletIconCropDisplaySize(){
+  const scale = walletIconCrop.baseScale * walletIconCrop.zoom;
+  return { w: walletIconCrop.naturalW * scale, h: walletIconCrop.naturalH * scale };
+}
+function centerWalletIconCrop(){
+  const size = walletIconCropDisplaySize();
+  walletIconCrop.offsetX = (WALLET_ICON_STAGE - size.w) / 2;
+  walletIconCrop.offsetY = (WALLET_ICON_STAGE - size.h) / 2;
+}
+// Batasi offset supaya foto selalu menutupi seluruh area lingkaran (nggak
+// ada celah putih) walaupun digeser sampai ke ujung.
+function clampWalletIconOffset(){
+  const size = walletIconCropDisplaySize();
+  const minX = Math.min(0, WALLET_ICON_STAGE - size.w);
+  const minY = Math.min(0, WALLET_ICON_STAGE - size.h);
+  walletIconCrop.offsetX = Math.max(minX, Math.min(0, walletIconCrop.offsetX));
+  walletIconCrop.offsetY = Math.max(minY, Math.min(0, walletIconCrop.offsetY));
+}
+function applyWalletIconCropTransform(){
+  if (!walletIconCrop.ready) return;
+  const cropImgEl = document.getElementById('walletIconCropImg');
+  if (!cropImgEl) return;
+  const size = walletIconCropDisplaySize();
+  cropImgEl.style.width = size.w + 'px';
+  cropImgEl.style.height = size.h + 'px';
+  cropImgEl.style.transform = `translate(${walletIconCrop.offsetX}px, ${walletIconCrop.offsetY}px)`;
+}
+function onWalletIconZoomInput(val){
+  if (!walletIconCrop.ready) return;
+  const size0 = walletIconCropDisplaySize();
+  // titik tengah stage sebelum zoom, dalam koordinat gambar, biar zoom-nya
+  // "dari tengah" bukan geser ke pojok.
+  const cx = (WALLET_ICON_STAGE / 2 - walletIconCrop.offsetX) / size0.w;
+  const cy = (WALLET_ICON_STAGE / 2 - walletIconCrop.offsetY) / size0.h;
+  walletIconCrop.zoom = Math.max(1, Math.min(4, Number(val) / 100));
+  const size1 = walletIconCropDisplaySize();
+  walletIconCrop.offsetX = WALLET_ICON_STAGE / 2 - cx * size1.w;
+  walletIconCrop.offsetY = WALLET_ICON_STAGE / 2 - cy * size1.h;
+  clampWalletIconOffset();
+  applyWalletIconCropTransform();
+  bakeWalletIconCropDebounced();
+}
+function stepWalletIconZoom(deltaPercent){
+  const slider = document.getElementById('walletIconZoomSlider');
+  if (!slider) return;
+  let val = Number(slider.value) + deltaPercent;
+  val = Math.max(Number(slider.min), Math.min(Number(slider.max), val));
+  slider.value = val;
+  onWalletIconZoomInput(val);
+}
+
+// Drag foto (mouse + touch via Pointer Events) ke segala arah.
+(function initWalletIconCropDrag(){
+  document.addEventListener('DOMContentLoaded', function(){
+    const stage = document.getElementById('walletIconCropStage');
+    if (!stage) return;
+    let dragging = false, startX = 0, startY = 0, startOffX = 0, startOffY = 0;
+    stage.addEventListener('pointerdown', function(e){
+      if (!walletIconCrop.ready) return;
+      dragging = true;
+      stage.classList.add('dragging');
+      stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+      startX = e.clientX; startY = e.clientY;
+      startOffX = walletIconCrop.offsetX; startOffY = walletIconCrop.offsetY;
+    });
+    stage.addEventListener('pointermove', function(e){
+      if (!dragging) return;
+      walletIconCrop.offsetX = startOffX + (e.clientX - startX);
+      walletIconCrop.offsetY = startOffY + (e.clientY - startY);
+      clampWalletIconOffset();
+      applyWalletIconCropTransform();
+    });
+    function endDrag(){
+      if (!dragging) return;
+      dragging = false;
+      stage.classList.remove('dragging');
+      bakeWalletIconCropDebounced();
+    }
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('pointerleave', function(){ if (dragging) endDrag(); });
+  });
+})();
+
+let walletIconBakeTimer = null;
+function bakeWalletIconCropDebounced(){
+  if (walletIconBakeTimer) clearTimeout(walletIconBakeTimer);
+  walletIconBakeTimer = setTimeout(bakeWalletIconCrop, 120);
+}
+// "Panggang" area yang kelihatan di stage jadi satu gambar persegi
+// (WALLET_ICON_OUTPUT x WALLET_ICON_OUTPUT) yang otomatis ter-resize &
+// terkompres, lalu dipakai sebagai icon dompet (state.walletIconSel).
+// Dengan ini icon dompet selalu pas & ukurannya ringan, nggak peduli
+// foto aslinya segede apapun.
+function bakeWalletIconCrop(){
+  if (!walletIconCrop.ready || !walletIconCrop.img) return;
+  const scale = walletIconCrop.baseScale * walletIconCrop.zoom;
+  const factor = 1 / scale; // px layar -> px asli foto
+  const sx = Math.max(0, (-walletIconCrop.offsetX) * factor);
+  const sy = Math.max(0, (-walletIconCrop.offsetY) * factor);
+  const sSize = WALLET_ICON_STAGE * factor;
+  const sw = Math.min(sSize, walletIconCrop.naturalW - sx);
+  const sh = Math.min(sSize, walletIconCrop.naturalH - sy);
+  const canvas = document.createElement('canvas');
+  canvas.width = WALLET_ICON_OUTPUT;
+  canvas.height = WALLET_ICON_OUTPUT;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(walletIconCrop.img, sx, sy, sw, sh, 0, 0, WALLET_ICON_OUTPUT, WALLET_ICON_OUTPUT);
+  state.walletIconSel = canvas.toDataURL('image/jpeg', 0.86);
+  state.walletIconPosX = 50;
+  state.walletIconPosY = 50;
+  const prev = document.getElementById('walletIconPreview');
+  if (prev) prev.innerHTML = `<img src="${state.walletIconSel}">`;
+  const removeBtn = document.getElementById('walletIconRemoveBtn');
+  if (removeBtn) removeBtn.style.display = 'block';
 }
 function pickWalletIcon(ic){
   state.walletIconSel = ic;
