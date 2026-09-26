@@ -210,6 +210,17 @@
   .trend-legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;color:var(--ink-soft);font-weight:700;}
   .trend-legend span{display:flex;align-items:center;gap:5px;}
 
+  .tren-range-nav{display:flex;align-items:center;gap:8px;}
+  .tren-nav-btn{width:26px;height:26px;border-radius:50%;border:none;background:var(--accent-soft);color:var(--ink);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .tren-nav-btn:disabled{opacity:0.35;}
+  .tren-range-lbl{font-size:12px;font-weight:800;color:var(--ink-soft);white-space:nowrap;}
+  .tren-count-row{display:flex;align-items:center;gap:10px;margin:2px 0 14px;font-size:12.5px;color:var(--ink-soft);font-weight:700;}
+  .tren-count-btn{width:26px;height:26px;border-radius:50%;border:none;background:var(--accent-soft);color:var(--ink);font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .tren-count-btn:disabled{opacity:0.35;}
+  .tren-count-val{font-size:13px;font-weight:800;color:var(--ink);min-width:56px;text-align:center;}
+  .pos-txt{color:var(--green);font-weight:800;}
+  .neg-txt{color:var(--red);font-weight:800;}
+
   .legend-row.clickable{cursor:pointer;border-radius:8px;transition:background .15s ease;padding:4px 6px;margin:-4px -6px;}
   .legend-row.clickable:hover{background:#faf3f7;}
   .legend-row.expanded{background:var(--accent-soft);padding:4px 6px;margin:-4px -6px;}
@@ -399,6 +410,9 @@
   }
   .date-field .date-ic{font-size:15px;}
   .date-field input[type=date]{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:none;}
+
+  .lanjut-tambah-row{display:flex;align-items:center;gap:8px;margin:14px 2px 2px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .lanjut-tambah-row input[type=checkbox]{width:17px;height:17px;flex-shrink:0;accent-color:var(--accent);}
 
   .catatan-input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:13px;font-family:inherit;color:var(--ink);margin-top:8px;outline:none;}
   .catatan-input:focus{border-color:var(--accent);}
@@ -741,16 +755,26 @@
       </div>
 
       <div class="card" style="margin-top:16px;">
-        <div class="donut-head">
-          <h3>Pemasukan vs Pengeluaran (6 Bulan)</h3>
+        <div class="donut-head" id="lapTrenBulanHead"></div>
+        <div class="tren-count-row" id="lapTrenBulanCountRow"></div>
+        <div class="line-chart-wrap" id="lapTrenBulanWrap">
+          <svg id="lapTrenBulanSvg" viewBox="0 0 320 190" style="width:100%;height:190px;display:block;overflow:visible;"></svg>
+          <div class="line-chart-tooltip" id="lapTrenBulanTooltip" style="display:none;"></div>
         </div>
-        <div class="trend-legend" style="margin-bottom:8px;">
+        <div class="trend-legend">
           <span><span class="dot" style="background:var(--green)"></span>Pemasukan</span>
           <span><span class="dot" style="background:var(--red)"></span>Pengeluaran</span>
         </div>
-        <div class="line-chart-wrap" id="lap6BulanWrap">
-          <svg id="lap6BulanSvg" viewBox="0 0 320 190" style="width:100%;height:190px;display:block;overflow:visible;"></svg>
-          <div class="line-chart-tooltip" id="lap6BulanTooltip" style="display:none;"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="donut-head">
+          <h3>Tren Kekayaan Bersih</h3>
+        </div>
+        <div class="insight" id="lapSaldoBandingInsight" style="margin-top:0;margin-bottom:14px;"></div>
+        <div class="line-chart-wrap" id="lapKekayaanWrap">
+          <svg id="lapKekayaanSvg" viewBox="0 0 320 190" style="width:100%;height:190px;display:block;overflow:visible;"></svg>
+          <div class="line-chart-tooltip" id="lapKekayaanTooltip" style="display:none;"></div>
         </div>
       </div>
 
@@ -953,6 +977,11 @@
       <span id="tanggalDisplay">Hari ini</span>
       <input type="date" id="tanggalInput" oninput="onTanggalChange()">
     </div>
+
+    <label class="lanjut-tambah-row" id="lanjutTambahRow">
+      <input type="checkbox" id="lanjutTambahCheckbox">
+      <span>Simpan &amp; tambah transaksi lagi (form tetap terbuka)</span>
+    </label>
 
     <div class="field-label" id="dompetFieldLabel">Dompet</div>
     <div class="chip-row" id="dompetChips"></div>
@@ -1348,7 +1377,7 @@
   <div class="sheet-inner">
     <button class="close-x" onclick="closeAsetSheet()">✕</button>
     <div class="grabber"></div>
-    <p class="sheet-title">Catat Aset</p>
+    <p class="sheet-title" id="asetSheetTitle">Catat Aset</p>
     <div class="type-toggle">
       <button class="active in" id="btnAsetTambah" onclick="setAsetTipe('Tambah')">Tambah</button>
       <button id="btnAsetKurang" onclick="setAsetTipe('Kurang')">Kurang</button>
@@ -1375,7 +1404,7 @@
   <div class="sheet-inner">
     <button class="close-x" onclick="closeTabunganSheet()">✕</button>
     <div class="grabber"></div>
-    <p class="sheet-title">Catat Tabungan</p>
+    <p class="sheet-title" id="tabunganSheetTitle">Catat Tabungan</p>
     <div class="type-toggle">
       <button class="active in" id="btnTabunganSetor" onclick="setTabunganTipe('Setor')">Setor</button>
       <button id="btnTabunganTarik" onclick="setTabunganTipe('Tarik')">Tarik</button>
@@ -1437,9 +1466,11 @@ let state = {
   walletEditId: null,
   editingTrxId: null,
   editingTrxIsTransfer: false,
+  editingAsetId: null,
+  editingTabunganId: null,
   adjustMode: "tambah",
   adjustWalletNama: null,
-  report: { filter: "bulanIni", customFrom: "", customTo: "", expandedKategori: null },
+  report: { filter: "bulanIni", customFrom: "", customTo: "", expandedKategori: null, trendMonthCount: 6, trendMonthOffset: 0 },
   kesehatanSnapshot: null,
   aiAnalisis: null,
   budgetKategoriSel: null,
@@ -1704,6 +1735,10 @@ function openSheet(){
   document.getElementById('saveBtn').textContent = 'Simpan';
   document.getElementById('jumlahInput').value = "";
   document.getElementById('catatanInput').value = "";
+  // Opsi "Simpan & tambah transaksi lagi" cuma relevan waktu nyatat baru,
+  // bukan waktu edit 1 transaksi yang sudah ada -> tampil di mode Tambah.
+  document.getElementById('lanjutTambahRow').style.display = 'flex';
+  document.getElementById('lanjutTambahCheckbox').checked = false;
   initTransaksiSheetUI();
   document.getElementById('btnOut').classList.toggle('active', state.tipe==='Pengeluaran');
   document.getElementById('btnOut').classList.toggle('out', state.tipe==='Pengeluaran');
@@ -1728,8 +1763,20 @@ function openEditTransaksiSheet(id){
   const r = data.riwayat.find(x => x.id === id);
   if (!r) return;
 
+  // Kalau tombol Edit ini diklik dari DALAM sheet "Detail Transaksi" (mis.
+  // hasil klik kategori/tanggal/dompet/tren di beranda atau laporan — alur
+  // yang lebih sering dipakai waktu explore dashboard di layar desktop yang
+  // lebih lega), tutup dulu sheet tersebut. Kalau tidak, sheet Edit
+  // Transaksi yang baru dibuka ini jadi tersembunyi DI BELAKANG sheet
+  // Detail Transaksi (sama-sama sheet overlay, tapi Detail Transaksi
+  // ditulis lebih akhir di HTML sehingga selalu ada di lapisan paling atas)
+  // sehingga terlihat seperti "tidak muncul" walau sebenarnya sudah kebuka.
+  closeDetailTrxSheet();
+
   state.editingTrxId = id;
   state.editingTrxIsTransfer = !!r.isTransfer;
+  // Mode edit selalu 1 transaksi -> sembunyikan opsi "tambah transaksi lagi".
+  document.getElementById('lanjutTambahRow').style.display = 'none';
 
   const d = new Date(r.tanggal);
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), day = String(d.getDate()).padStart(2,"0");
@@ -2532,13 +2579,20 @@ function onLapCustomChange(){
   state.aiAnalisis = null;
   if (state.report.customFrom && state.report.customTo && state.dashboard) renderLaporanView(state.dashboard);
 }
-function buildLast6MonthsBuckets(riwayat){
+// Bangun bucket bulanan untuk jendela "N bulan terakhir" yang bisa digeser
+// (offset) & diubah jumlahnya (count). Tiap bucket berisi total Pemasukan
+// & Pengeluaran bulan itu (tidak termasuk transfer & penyesuaian saldo,
+// konsisten dengan bulanIni), PLUS saldoAkhir = total saldo semua dompet
+// pada akhir bulan tsb, direkonstruksi mundur dari saldo total saat ini.
+function buildMonthRangeBuckets(riwayat, saldoTotal, count, offset){
   const now = new Date();
   const buckets = [];
-  for (let i=5; i>=0; i--){
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+  for (let i = count - 1; i >= 0; i--){
+    const monthsBack = offset + i;
+    const d = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
     buckets.push({
       label: d.toLocaleDateString('id-ID', { month:'short', year:'2-digit' }),
+      year: d.getFullYear(), month: d.getMonth(),
       key: d.getFullYear()+'-'+d.getMonth(),
       pemasukan: 0, pengeluaran: 0
     });
@@ -2549,33 +2603,141 @@ function buildLast6MonthsBuckets(riwayat){
     const b = buckets.find(function(x){ return x.key === key; });
     if (b){ if (r.tipe === 'Pemasukan') b.pemasukan += r.jumlah; else b.pengeluaran += r.jumlah; }
   });
+  // Saldo akhir bulan = saldo total sekarang dikurangi total efek transaksi
+  // yang terjadi SETELAH akhir bulan tsb (mundur dari sekarang). Semua
+  // transaksi (termasuk transfer & penyesuaian) ikut dihitung di sini karena
+  // memang mengubah saldo dompet sungguhan.
+  buckets.forEach(function(b){
+    const cutoff = new Date(b.year, b.month+1, 0, 23,59,59,999);
+    let afterEffect = 0;
+    riwayat.forEach(function(r){
+      const d = new Date(r.tanggal);
+      if (d > cutoff) afterEffect += (r.tipe === 'Pemasukan' ? r.jumlah : -r.jumlah);
+    });
+    b.saldoAkhir = saldoTotal - afterEffect;
+  });
   return buckets;
 }
+function formatTrenRangeLbl(buckets){
+  const first = buckets[0], last = buckets[buckets.length-1];
+  const shortM = function(b){ return new Date(b.year,b.month,1).toLocaleDateString('id-ID',{month:'short'}); };
+  if (first.year === last.year) return shortM(first) + '–' + shortM(last) + ' ' + last.year;
+  return shortM(first)+' '+first.year+' – '+shortM(last)+' '+last.year;
+}
+function shiftTrenBulan(delta){
+  state.report.trendMonthOffset = Math.max(0, state.report.trendMonthOffset + delta);
+  if (state.dashboard) renderLaporanView(state.dashboard);
+}
+function changeTrenBulanCount(delta){
+  state.report.trendMonthCount = Math.min(12, Math.max(3, state.report.trendMonthCount + delta));
+  if (state.dashboard) renderLaporanView(state.dashboard);
+}
 
-/* ---------------- LAPORAN: LINE CHART 6 BULAN ---------------- */
+/* ---------------- LAPORAN: FORMAT ANGKA CHART ---------------- */
 function formatRpJt(n){
   n = Math.round(Number(n) || 0);
+  const sign = n < 0 ? '-' : '';
+  n = Math.abs(n);
   if (n >= 1000000){
     const v = n / 1000000;
-    return 'Rp ' + (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + 'jt';
+    return sign + 'Rp ' + (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + 'jt';
   }
-  if (n >= 1000) return 'Rp ' + Math.round(n/1000) + 'rb';
-  return 'Rp ' + n;
+  if (n >= 1000) return sign + 'Rp ' + Math.round(n/1000) + 'rb';
+  return sign + 'Rp ' + n;
 }
-function renderLine6BulanChart(buckets){
+
+/* ---------------- LAPORAN: TREN N BULAN (BAR PEMASUKAN/PENGELUARAN) ---------------- */
+function renderTrenBulanHeaderUI(){
+  const count = state.report.trendMonthCount, offset = state.report.trendMonthOffset;
+  document.getElementById('lapTrenBulanHead').innerHTML = `
+    <h3>Tren ${count} bulan terakhir</h3>
+    <div class="tren-range-nav">
+      <button class="tren-nav-btn" onclick="shiftTrenBulan(1)" aria-label="Periode sebelumnya">‹</button>
+      <span class="tren-range-lbl" id="lapTrenRangeLbl"></span>
+      <button class="tren-nav-btn" onclick="shiftTrenBulan(-1)" ${offset<=0?'disabled':''} aria-label="Periode berikutnya">›</button>
+    </div>`;
+  document.getElementById('lapTrenBulanCountRow').innerHTML = `
+    <span>Tampilkan</span>
+    <button class="tren-count-btn" onclick="changeTrenBulanCount(-1)" ${count<=3?'disabled':''}>−</button>
+    <span class="tren-count-val">${count} bulan</span>
+    <button class="tren-count-btn" onclick="changeTrenBulanCount(1)" ${count>=12?'disabled':''}>+</button>`;
+}
+function renderTrenBulanChart(buckets){
+  document.getElementById('lapTrenRangeLbl').textContent = formatTrenRangeLbl(buckets);
   const W = 320, H = 190;
-  const padL = 46, padR = 8, padT = 14, padB = 22;
+  const padL = 46, padR = 8, padT = 16, padB = 22;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
+  const baselineY = padT + chartH/2;
   const maxRaw = Math.max(1, ...buckets.map(b=>Math.max(b.pemasukan, b.pengeluaran)));
   const maxVal = maxRaw * 1.15;
   const n = buckets.length;
   const xAt = i => padL + (n>1 ? i*(chartW/(n-1)) : chartW/2);
-  const yAt = v => padT + chartH - (v/maxVal)*chartH;
+  const barW = Math.max(9, Math.min(26, (chartW/n) * 0.42));
 
   let svg = '';
-  for (let g=0; g<=3; g++){
-    const val = maxVal * g/3;
+  svg += `<line x1="${padL}" y1="${padT.toFixed(1)}" x2="${padL+chartW}" y2="${padT.toFixed(1)}" stroke="#ece0f3" stroke-width="1"/>`;
+  svg += `<text x="${padL-6}" y="${(padT+3).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" fill="#8d7f97">${formatRpJt(maxVal)}</text>`;
+  svg += `<line x1="${padL}" y1="${baselineY.toFixed(1)}" x2="${padL+chartW}" y2="${baselineY.toFixed(1)}" stroke="#d8cadf" stroke-width="1"/>`;
+  svg += `<line x1="${padL}" y1="${(padT+chartH).toFixed(1)}" x2="${padL+chartW}" y2="${(padT+chartH).toFixed(1)}" stroke="#ece0f3" stroke-width="1"/>`;
+  svg += `<text x="${padL-6}" y="${(padT+chartH+3).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" fill="#8d7f97">${formatRpJt(maxVal)}</text>`;
+
+  buckets.forEach(function(b,i){
+    const x = xAt(i);
+    svg += `<text x="${x.toFixed(1)}" y="${(padT+chartH+16).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="#8d7f97">${b.label}</text>`;
+    const hIn = (b.pemasukan/maxVal) * (chartH/2);
+    const hOut = (b.pengeluaran/maxVal) * (chartH/2);
+    svg += `<g style="cursor:pointer;" onclick="showTrenBulanTooltip(${i})">`;
+    if (b.pemasukan > 0) svg += `<rect x="${(x-barW/2).toFixed(1)}" y="${(baselineY-Math.max(hIn,2)).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(hIn,2).toFixed(1)}" rx="3" fill="var(--green)"/>`;
+    if (b.pengeluaran > 0) svg += `<rect x="${(x-barW/2).toFixed(1)}" y="${baselineY.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(hOut,2).toFixed(1)}" rx="3" fill="var(--red)"/>`;
+    if (b.pemasukan === 0 && b.pengeluaran === 0) svg += `<rect x="${(x-barW/2).toFixed(1)}" y="${(baselineY-1).toFixed(1)}" width="${barW.toFixed(1)}" height="2" fill="#ece0f3"/>`;
+    svg += `</g>`;
+  });
+
+  document.getElementById('lapTrenBulanSvg').innerHTML = svg;
+  state.trenBulanBuckets = buckets;
+  state.trenBulanLayout = { padL, padR, padT, padB, chartW, chartH, n };
+  showTrenBulanTooltip(n-1);
+}
+function showTrenBulanTooltip(i){
+  const buckets = state.trenBulanBuckets, layout = state.trenBulanLayout;
+  if (!buckets || !layout || !buckets[i]) return;
+  const b = buckets[i];
+  const tt = document.getElementById('lapTrenBulanTooltip');
+  const net = b.pemasukan - b.pengeluaran;
+  tt.innerHTML = `<div class="ttl">${b.label}</div>
+    <div class="row"><span class="dot" style="background:var(--green)"></span>Pemasukan: ${formatRupiah(b.pemasukan)}</div>
+    <div class="row"><span class="dot" style="background:var(--red)"></span>Pengeluaran: ${formatRupiah(b.pengeluaran)}</div>
+    <div class="tt-summary">${net>=0?'Surplus':'Defisit'}: ${formatRupiah(Math.abs(net))}</div>`;
+
+  const wrap = document.getElementById('lapTrenBulanWrap');
+  const wrapW = wrap.clientWidth || 320;
+  const scale = wrapW / 320;
+  const x = (layout.n>1 ? layout.padL + i*(layout.chartW/(layout.n-1)) : layout.padL + layout.chartW/2) * scale;
+  const y = layout.padT * scale;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+  tt.style.display = 'block';
+}
+
+/* ---------------- LAPORAN: TREN KEKAYAAN BERSIH (LINE + AREA) ---------------- */
+function renderKekayaanChart(buckets){
+  const W = 320, H = 190;
+  const padL = 50, padR = 8, padT = 30, padB = 22;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const values = buckets.map(b=>b.saldoAkhir);
+  let minVal = Math.min(0, ...values), maxVal = Math.max(1, ...values);
+  if (maxVal === minVal) maxVal = minVal + 1;
+  const range = (maxVal - minVal) * 1.1 || 1;
+  const baseMin = maxVal - range;
+  const n = buckets.length;
+  const xAt = i => padL + (n>1 ? i*(chartW/(n-1)) : chartW/2);
+  const yAt = v => padT + chartH - ((v-baseMin)/range)*chartH;
+
+  let svg = '';
+  for (let g=0; g<=2; g++){
+    const val = baseMin + range*g/2;
     const y = yAt(val);
     svg += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL+chartW}" y2="${y.toFixed(1)}" stroke="#ece0f3" stroke-width="1"/>`;
     svg += `<text x="${padL-6}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" fill="#8d7f97">${formatRpJt(val)}</text>`;
@@ -2584,38 +2746,37 @@ function renderLine6BulanChart(buckets){
     svg += `<text x="${xAt(i).toFixed(1)}" y="${(padT+chartH+16).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="#8d7f97">${b.label}</text>`;
   });
 
-  function pathFor(key, color){
-    let d = '';
-    buckets.forEach(function(b,i){
-      d += (i===0?'M':'L') + xAt(i).toFixed(1) + ' ' + yAt(b[key]).toFixed(1) + ' ';
-    });
-    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-  }
-  svg += pathFor('pemasukan', '#2ecc71');
-  svg += pathFor('pengeluaran', '#ff4d5e');
+  let linePath = '';
+  buckets.forEach(function(b,i){
+    linePath += (i===0?'M':'L') + xAt(i).toFixed(1) + ' ' + yAt(b.saldoAkhir).toFixed(1) + ' ';
+  });
+  const areaPath = 'M' + xAt(0).toFixed(1) + ' ' + (padT+chartH).toFixed(1) + ' L' +
+    buckets.map((b,i)=> xAt(i).toFixed(1) + ' ' + yAt(b.saldoAkhir).toFixed(1)).join(' L') +
+    ' L' + xAt(n-1).toFixed(1) + ' ' + (padT+chartH).toFixed(1) + ' Z';
+
+  svg += `<path d="${areaPath}" fill="#a9862d" opacity="0.12" stroke="none"/>`;
+  svg += `<path d="${linePath}" fill="none" stroke="#a9862d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
   buckets.forEach(function(b,i){
-    svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.pemasukan).toFixed(1)}" r="4" fill="#fff" stroke="#2ecc71" stroke-width="2.5" style="cursor:pointer;" onclick="showLap6Tooltip(${i})"/>`;
-    svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.pengeluaran).toFixed(1)}" r="4" fill="#fff" stroke="#ff4d5e" stroke-width="2.5" style="cursor:pointer;" onclick="showLap6Tooltip(${i})"/>`;
+    const isLast = i === n-1;
+    svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.saldoAkhir).toFixed(1)}" r="${isLast?4.5:3.5}" fill="#fff" stroke="#a9862d" stroke-width="2.5" style="cursor:pointer;" onclick="showKekayaanTooltip(${i})"/>`;
+    if (isLast){
+      svg += `<text x="${xAt(i).toFixed(1)}" y="${(yAt(b.saldoAkhir)-10).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="800" fill="#8a6a1f">${formatRupiah(b.saldoAkhir)}</text>`;
+    }
   });
 
-  document.getElementById('lap6BulanSvg').innerHTML = svg;
-  state.lap6Buckets = buckets;
-  state.lap6Layout = { padL, padR, padT, padB, chartW, chartH, n };
-  showLap6Tooltip(n-1);
+  document.getElementById('lapKekayaanSvg').innerHTML = svg;
+  state.kekayaanBuckets = buckets;
+  state.kekayaanLayout = { padL, padR, padT, padB, chartW, chartH, n };
 }
-function showLap6Tooltip(i){
-  const buckets = state.lap6Buckets, layout = state.lap6Layout;
+function showKekayaanTooltip(i){
+  const buckets = state.kekayaanBuckets, layout = state.kekayaanLayout;
   if (!buckets || !layout || !buckets[i]) return;
   const b = buckets[i];
-  const tt = document.getElementById('lap6BulanTooltip');
-  const net = b.pemasukan - b.pengeluaran;
+  const tt = document.getElementById('lapKekayaanTooltip');
   tt.innerHTML = `<div class="ttl">${b.label}</div>
-    <div class="row"><span class="dot" style="background:#2ecc71"></span>Pemasukan: ${formatRupiah(b.pemasukan)}</div>
-    <div class="row"><span class="dot" style="background:#ff4d5e"></span>Pengeluaran: ${formatRupiah(b.pengeluaran)}</div>
-    <div class="tt-summary">${net>=0?'Surplus':'Defisit'}: ${formatRupiah(Math.abs(net))}</div>`;
-
-  const wrap = document.getElementById('lap6BulanWrap');
+    <div class="tt-summary">Saldo akhir: ${formatRupiah(b.saldoAkhir)}</div>`;
+  const wrap = document.getElementById('lapKekayaanWrap');
   const wrapW = wrap.clientWidth || 320;
   const scale = wrapW / 320;
   const x = (layout.n>1 ? layout.padL + i*(layout.chartW/(layout.n-1)) : layout.padL + layout.chartW/2) * scale;
@@ -2623,6 +2784,29 @@ function showLap6Tooltip(i){
   tt.style.left = x + 'px';
   tt.style.top = y + 'px';
   tt.style.display = 'block';
+}
+
+/* ---------------- LAPORAN: SALDO BULAN INI VS BULAN LALU ---------------- */
+function renderSaldoBandingInsight(data){
+  const now = new Date();
+  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0,0,0,0);
+  const saldoBulanIni = data.saldoTotal;
+  let effectThisMonth = 0;
+  data.riwayat.forEach(function(r){
+    const d = new Date(r.tanggal);
+    if (d >= startOfThisMonth) effectThisMonth += (r.tipe === 'Pemasukan' ? r.jumlah : -r.jumlah);
+  });
+  const saldoBulanLalu = saldoBulanIni - effectThisMonth;
+  const diff = saldoBulanIni - saldoBulanLalu;
+  const naik = diff >= 0;
+  const pct = saldoBulanLalu !== 0 ? (diff/Math.abs(saldoBulanLalu))*100 : null;
+  const pctTxt = pct === null ? '' : ` (${naik?'+':'-'}${Math.abs(pct).toFixed(1)}%)`;
+  const el = document.getElementById('lapSaldoBandingInsight');
+  if (!el) return;
+  el.innerHTML = `<span class="ic">${naik?'📈':'📉'}</span>
+    <span>Saldo akhir bulan ini <b>${formatRupiah(saldoBulanIni)}</b>, ${naik?'naik':'turun'}
+    <span class="${naik?'pos-txt':'neg-txt'}">${formatRupiah(Math.abs(diff))}${pctTxt}</span>
+    dibanding akhir bulan lalu (${formatRupiah(saldoBulanLalu)}).</span>`;
 }
 
 /* ---------------- LAPORAN: RENDER ---------------- */
@@ -2681,8 +2865,11 @@ function renderLaporanView(data){
     </div>`;
   }).join('');
 
-  const buckets6 = buildLast6MonthsBuckets(data.riwayat);
-  renderLine6BulanChart(buckets6);
+  renderTrenBulanHeaderUI();
+  const trenBuckets = buildMonthRangeBuckets(data.riwayat, data.saldoTotal, state.report.trendMonthCount, state.report.trendMonthOffset);
+  renderTrenBulanChart(trenBuckets);
+  renderKekayaanChart(trenBuckets);
+  renderSaldoBandingInsight(data);
 
   const catMap = {};
   rows.filter(r=>r.tipe==='Pengeluaran').forEach(function(r){
@@ -3288,14 +3475,29 @@ async function submitTransaksi(){
     }
     const data = await postAction(payload);
     renderAll(data);
-    showToast(isEdit ? "Transaksi diperbarui ✅" : (transferMode ? "Transfer tersimpan ✅" : "Transaksi tersimpan ✅"));
     if (state.detailTrx) renderDetailTrxSheet();
-    closeSheet();
-    state.editingTrxId = null;
-    state.editingTrxIsTransfer = false;
-    document.getElementById('tambahTrxTitle').textContent = 'Tambah Transaksi';
-    document.getElementById('jumlahInput').value = "";
-    document.getElementById('catatanInput').value = "";
+
+    // "Simpan & tambah transaksi lagi": kalau dicentang (dan bukan mode
+    // edit), form TIDAK ditutup — cuma nominal & catatan yang dikosongkan
+    // lagi, sementara dompet/kategori/tanggal/tipe dipertahankan, supaya
+    // bisa langsung catat transaksi berikutnya tanpa bolak-balik
+    // buka-tutup form (isi-simpan, isi-simpan, dst).
+    const lanjutTambah = !isEdit && document.getElementById('lanjutTambahCheckbox').checked;
+
+    showToast(isEdit ? "Transaksi diperbarui ✅" : (transferMode ? "Transfer tersimpan ✅" : "Transaksi tersimpan ✅"));
+
+    if (lanjutTambah){
+      document.getElementById('jumlahInput').value = "";
+      document.getElementById('catatanInput').value = "";
+      document.getElementById('jumlahInput').focus();
+    } else {
+      closeSheet();
+      state.editingTrxId = null;
+      state.editingTrxIsTransfer = false;
+      document.getElementById('tambahTrxTitle').textContent = 'Tambah Transaksi';
+      document.getElementById('jumlahInput').value = "";
+      document.getElementById('catatanInput').value = "";
+    }
   } catch(err){
     showToast("Gagal: " + err.message);
   } finally {
@@ -4020,17 +4222,43 @@ function renderAsetView(data){
         <div class="trx-meta">${formatTanggalDisplay(r.tanggal.slice(0,10))}</div>
       </div>
       <div class="trx-amt ${r.tipe==='Tambah'?'in':'out'}">${r.tipe==='Tambah'?'+':'-'}${formatRupiah(r.jumlah)}</div>
+      <button class="trx-del" onclick="editAsetSheet('${r.id}')" title="Edit catatan">✏️</button>
       <button class="trx-del" onclick="confirmDeleteAset('${r.id}')">✕</button>
     </div>
   `).join('');
 }
 function openAsetSheet(){
+  state.editingAsetId = null;
+  document.getElementById('asetSheetTitle').textContent = 'Catat Aset';
+  document.getElementById('saveAsetBtn').textContent = 'Simpan';
   document.getElementById('asetJumlahInput').value = '';
   document.getElementById('asetCatatanInput').value = '';
   setAsetTipe('Tambah');
   state.genericTanggal.aset = todayStr();
   document.getElementById('asetTanggalInput').value = todayStr();
   document.getElementById('asetTanggalDisplay').textContent = 'Hari ini';
+  document.getElementById('overlay17').classList.add('show');
+  document.getElementById('sheetAset').classList.add('show');
+}
+// Buka sheet Aset dalam mode Edit, terisi otomatis dengan data catatan yang
+// sudah ada (Tambah/Kurang, jumlah, tanggal, catatan), supaya bisa dikoreksi
+// langsung tanpa perlu hapus & catat ulang dari nol.
+function editAsetSheet(id){
+  const data = state.aset;
+  if (!data) return;
+  const r = data.riwayat.find(x => x.id === id);
+  if (!r) return;
+  state.editingAsetId = id;
+  document.getElementById('asetSheetTitle').textContent = 'Edit Aset';
+  document.getElementById('saveAsetBtn').textContent = 'Simpan Perubahan';
+  document.getElementById('asetJumlahInput').value = Number(r.jumlah).toLocaleString('id-ID');
+  document.getElementById('asetCatatanInput').value = r.catatan || '';
+  setAsetTipe(r.tipe === 'Kurang' ? 'Kurang' : 'Tambah');
+  const d = new Date(r.tanggal);
+  const tgl = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  state.genericTanggal.aset = tgl;
+  document.getElementById('asetTanggalInput').value = tgl;
+  document.getElementById('asetTanggalDisplay').textContent = formatTanggalDisplay(tgl);
   document.getElementById('overlay17').classList.add('show');
   document.getElementById('sheetAset').classList.add('show');
 }
@@ -4050,19 +4278,24 @@ async function submitAset(){
   if (!jumlah){ showToast("Isi jumlah dulu ya"); return; }
   if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
   const btn = document.getElementById('saveAsetBtn');
+  const isEdit = !!state.editingAsetId;
   btn.disabled = true; btn.textContent = "Menyimpan...";
   try {
-    const data = await postAction({
-      action:"addAset", tipe: state.asetTipe, jumlah,
+    const payload = {
+      action: isEdit ? "updateAset" : "addAset",
+      tipe: state.asetTipe, jumlah,
       catatan: document.getElementById('asetCatatanInput').value.trim(),
       tanggal: state.genericTanggal.aset
-    });
+    };
+    if (isEdit) payload.id = state.editingAsetId;
+    const data = await postAction(payload);
     state.aset = data;
     renderAsetView(data);
-    showToast("Tersimpan ✅");
+    showToast(isEdit ? "Catatan diperbarui ✅" : "Tersimpan ✅");
     closeAsetSheet();
+    state.editingAsetId = null;
   } catch(err){ showToast("Gagal: " + err.message); }
-  finally { btn.disabled = false; btn.textContent = "Simpan"; }
+  finally { btn.disabled = false; btn.textContent = isEdit ? "Simpan Perubahan" : "Simpan"; }
 }
 async function confirmDeleteAset(id){
   if (!confirm("Hapus catatan ini?")) return;
@@ -4103,17 +4336,42 @@ function renderTabunganView(data){
         <div class="trx-meta">${formatTanggalDisplay(r.tanggal.slice(0,10))}</div>
       </div>
       <div class="trx-amt ${r.tipe==='Setor'?'in':'out'}">${r.tipe==='Setor'?'+':'-'}${formatRupiah(r.jumlah)}</div>
+      <button class="trx-del" onclick="editTabunganSheet('${r.id}')" title="Edit catatan">✏️</button>
       <button class="trx-del" onclick="confirmDeleteTabungan('${r.id}')">✕</button>
     </div>
   `).join('');
 }
 function openTabunganSheet(){
+  state.editingTabunganId = null;
+  document.getElementById('tabunganSheetTitle').textContent = 'Catat Tabungan';
+  document.getElementById('saveTabunganBtn').textContent = 'Simpan';
   document.getElementById('tabunganJumlahInput').value = '';
   document.getElementById('tabunganCatatanInput').value = '';
   setTabunganTipe('Setor');
   state.genericTanggal.tabungan = todayStr();
   document.getElementById('tabunganTanggalInput').value = todayStr();
   document.getElementById('tabunganTanggalDisplay').textContent = 'Hari ini';
+  document.getElementById('overlay18').classList.add('show');
+  document.getElementById('sheetTabungan').classList.add('show');
+}
+// Buka sheet Tabungan dalam mode Edit — sama seperti editAsetSheet, supaya
+// catatan Setor/Tarik yang sudah ada bisa dikoreksi tanpa hapus & catat ulang.
+function editTabunganSheet(id){
+  const data = state.tabungan;
+  if (!data) return;
+  const r = data.riwayat.find(x => x.id === id);
+  if (!r) return;
+  state.editingTabunganId = id;
+  document.getElementById('tabunganSheetTitle').textContent = 'Edit Tabungan';
+  document.getElementById('saveTabunganBtn').textContent = 'Simpan Perubahan';
+  document.getElementById('tabunganJumlahInput').value = Number(r.jumlah).toLocaleString('id-ID');
+  document.getElementById('tabunganCatatanInput').value = r.catatan || '';
+  setTabunganTipe(r.tipe === 'Tarik' ? 'Tarik' : 'Setor');
+  const d = new Date(r.tanggal);
+  const tgl = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  state.genericTanggal.tabungan = tgl;
+  document.getElementById('tabunganTanggalInput').value = tgl;
+  document.getElementById('tabunganTanggalDisplay').textContent = formatTanggalDisplay(tgl);
   document.getElementById('overlay18').classList.add('show');
   document.getElementById('sheetTabungan').classList.add('show');
 }
@@ -4133,19 +4391,24 @@ async function submitTabungan(){
   if (!jumlah){ showToast("Isi jumlah dulu ya"); return; }
   if (isPlaceholderUrl()) { showToast("SCRIPT_URL belum diisi"); return; }
   const btn = document.getElementById('saveTabunganBtn');
+  const isEdit = !!state.editingTabunganId;
   btn.disabled = true; btn.textContent = "Menyimpan...";
   try {
-    const data = await postAction({
-      action:"addTabungan", tipe: state.tabunganTipe, jumlah,
+    const payload = {
+      action: isEdit ? "updateTabungan" : "addTabungan",
+      tipe: state.tabunganTipe, jumlah,
       catatan: document.getElementById('tabunganCatatanInput').value.trim(),
       tanggal: state.genericTanggal.tabungan
-    });
+    };
+    if (isEdit) payload.id = state.editingTabunganId;
+    const data = await postAction(payload);
     state.tabungan = data;
     renderTabunganView(data);
-    showToast("Tersimpan ✅");
+    showToast(isEdit ? "Catatan diperbarui ✅" : "Tersimpan ✅");
     closeTabunganSheet();
+    state.editingTabunganId = null;
   } catch(err){ showToast("Gagal: " + err.message); }
-  finally { btn.disabled = false; btn.textContent = "Simpan"; }
+  finally { btn.disabled = false; btn.textContent = isEdit ? "Simpan Perubahan" : "Simpan"; }
 }
 async function confirmDeleteTabungan(id){
   if (!confirm("Hapus catatan ini?")) return;
@@ -4155,6 +4418,37 @@ async function confirmDeleteTabungan(id){
     renderTabunganView(data);
     showToast("Catatan dihapus");
   } catch(err){ showToast("Gagal: " + err.message); }
+}
+
+/* ---------------- DATE PICKER (klik kotak Tanggal di desktop) ----------------
+   Input <input type="date"> sengaja dibikin transparan menutupi SELURUH
+   kotak "Tanggal" (ikon 📅 + teks tanggal), lihat CSS .date-field, supaya
+   gampang di-tap di HP: di HP, tap di mana saja pada input type=date
+   otomatis membuka date picker/kalender bawaan.
+   Tapi di browser DESKTOP (mouse), klik pada <input type="date"> HANYA
+   otomatis membuka kalender kalau klik PAS di ikon kalender kecil bawaan
+   browser — klik di bagian lain cuma memfokuskan input tanpa ada kalender
+   yang kebuka & tanpa indikasi visual apapun (ikonnya sendiri disembunyikan
+   lewat opacity:0). Makanya di desktop kotak Tanggal terasa "tidak bisa
+   diklik" walau sebenarnya masih bisa difokus.
+   Fix-nya pakai showPicker(): dipanggil manual tiap kotak Tanggal diklik,
+   supaya klik di mana saja pada kotaknya membuka kalender, di browser
+   manapun (fallback ke focus() kalau browser belum dukung showPicker()). */
+function bindDateFieldPickers(){
+  document.querySelectorAll('.date-field').forEach(function(field){
+    if (field.dataset.pickerBound) return;
+    const inp = field.querySelector('input[type=date]');
+    if (!inp) return;
+    field.dataset.pickerBound = '1';
+    field.addEventListener('click', function(){
+      try {
+        if (typeof inp.showPicker === 'function') inp.showPicker();
+        else inp.focus();
+      } catch(err){
+        inp.focus();
+      }
+    });
+  });
 }
 
 /* ---------------- BOOTSTRAP ---------------- */
@@ -4182,6 +4476,7 @@ async function refreshDashboard(showFeedback){
   }
 }
 
+bindDateFieldPickers();
 refreshDashboard(false);
 </script>
 </body>
