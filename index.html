@@ -778,6 +778,7 @@
           <svg id="lapKekayaanSvg" viewBox="0 0 320 190" style="width:100%;height:190px;display:block;overflow:visible;"></svg>
           <div class="line-chart-tooltip" id="lapKekayaanTooltip" style="display:none;"></div>
         </div>
+        <div style="text-align:center;font-size:10.5px;color:var(--ink-soft);margin-top:6px;">👆 Ketuk grafik untuk melihat nominal kekayaan per periode</div>
       </div>
 
       <div class="card donut-card">
@@ -2847,7 +2848,8 @@ function showTrenBulanTooltip(i){
 }
 
 /* ---------------- LAPORAN: TREN KEKAYAAN BERSIH (LINE + AREA) ---------------- */
-function renderKekayaanChart(buckets){
+function renderKekayaanChart(buckets, sel){
+  if (sel === undefined) sel = null;
   const W = 320, H = 190;
   const padL = 50, padR = 8, padT = 30, padB = 22;
   const chartW = W - padL - padR;
@@ -2869,7 +2871,8 @@ function renderKekayaanChart(buckets){
     svg += `<text x="${padL-6}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" font-weight="700" fill="#8d7f97">${formatRpJt(val)}</text>`;
   }
   buckets.forEach(function(b,i){
-    svg += `<text x="${xAt(i).toFixed(1)}" y="${(padT+chartH+16).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="#8d7f97">${b.label}</text>`;
+    const on = sel === i;
+    svg += `<text x="${xAt(i).toFixed(1)}" y="${(padT+chartH+16).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="${on?800:700}" fill="${on?'#8a6a1f':'#8d7f97'}">${b.label}</text>`;
   });
 
   let linePath = '';
@@ -2881,36 +2884,70 @@ function renderKekayaanChart(buckets){
     ' L' + xAt(n-1).toFixed(1) + ' ' + (padT+chartH).toFixed(1) + ' Z';
 
   svg += `<path d="${areaPath}" fill="#a9862d" opacity="0.12" stroke="none"/>`;
+  if (sel !== null){
+    svg += `<line x1="${xAt(sel).toFixed(1)}" y1="${padT}" x2="${xAt(sel).toFixed(1)}" y2="${(padT+chartH).toFixed(1)}" stroke="#a9862d" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.7"/>`;
+  }
   svg += `<path d="${linePath}" fill="none" stroke="#a9862d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
   buckets.forEach(function(b,i){
-    const isLast = i === n-1;
-    svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.saldoAkhir).toFixed(1)}" r="${isLast?4.5:3.5}" fill="#fff" stroke="#a9862d" stroke-width="2.5" style="cursor:pointer;" onclick="showKekayaanTooltip(${i})"/>`;
-    if (isLast){
+    const isLast = i === n-1, on = sel === i;
+    svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(b.saldoAkhir).toFixed(1)}" r="${on?6:(isLast?4.5:3.5)}" fill="${on?'#a9862d':'#fff'}" stroke="${on?'#fff':'#a9862d'}" stroke-width="2.5" style="pointer-events:none;"/>`;
+    if (isLast && sel === null){
       svg += `<text x="${xAt(i).toFixed(1)}" y="${(yAt(b.saldoAkhir)-10).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="800" fill="#8a6a1f">${formatRupiah(b.saldoAkhir)}</text>`;
     }
   });
 
+  // area sentuh lebar (1 kolom penuh per titik) supaya mudah diketuk di HP, tidak perlu pas di titiknya
+  const step = n>1 ? chartW/(n-1) : chartW;
+  buckets.forEach(function(b,i){
+    svg += `<rect x="${(xAt(i)-step/2).toFixed(1)}" y="${padT-24}" width="${step.toFixed(1)}" height="${chartH+48}" fill="transparent" style="cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showKekayaanTooltip(${i})"/>`;
+  });
+
   document.getElementById('lapKekayaanSvg').innerHTML = svg;
   state.kekayaanBuckets = buckets;
-  state.kekayaanLayout = { padL, padR, padT, padB, chartW, chartH, n };
+  state.kekayaanLayout = { padL, padR, padT, padB, chartW, chartH, n, baseMin, range };
+  if (sel === null){
+    const tt = document.getElementById('lapKekayaanTooltip');
+    if (tt) tt.style.display = 'none';
+  }
 }
 function showKekayaanTooltip(i){
   const buckets = state.kekayaanBuckets, layout = state.kekayaanLayout;
   if (!buckets || !layout || !buckets[i]) return;
+  renderKekayaanChart(buckets, i);          // gambar ulang dengan titik terpilih
+  const L = state.kekayaanLayout;
   const b = buckets[i];
   const tt = document.getElementById('lapKekayaanTooltip');
+  let delta = '';
+  if (i > 0){
+    const diff = b.saldoAkhir - buckets[i-1].saldoAkhir;
+    delta = `<div class="row" style="color:${diff>=0?'#8fe3a5':'#ff9aa8'};font-weight:700;">${diff>=0?'▲ Naik':'▼ Turun'} ${formatRupiah(Math.abs(diff))} dari ${buckets[i-1].label}</div>`;
+  }
   tt.innerHTML = `<div class="ttl">${b.label}</div>
-    <div class="tt-summary">Saldo akhir: ${formatRupiah(b.saldoAkhir)}</div>`;
+    <div style="font-size:13px;font-weight:800;">${state.saldoHidden ? 'Rp ••••••' : formatRupiah(b.saldoAkhir)}</div>
+    <div style="opacity:.75;margin-top:1px;">Kekayaan bersih (saldo akhir)</div>${state.saldoHidden ? '' : delta}`;
+
   const wrap = document.getElementById('lapKekayaanWrap');
   const wrapW = wrap.clientWidth || 320;
   const scale = wrapW / 320;
-  const x = (layout.n>1 ? layout.padL + i*(layout.chartW/(layout.n-1)) : layout.padL + layout.chartW/2) * scale;
-  const y = layout.padT * scale;
-  tt.style.left = x + 'px';
-  tt.style.top = y + 'px';
+  const x = (L.n>1 ? L.padL + i*(L.chartW/(L.n-1)) : L.padL + L.chartW/2) * scale;
+  const y = (L.padT + L.chartH - ((b.saldoAkhir - L.baseMin)/L.range)*L.chartH) * scale;
   tt.style.display = 'block';
+  const half = tt.offsetWidth / 2;
+  tt.style.left = Math.max(half + 4, Math.min(wrapW - half - 4, x)) + 'px';
+  if (y - tt.offsetHeight - 14 < 0){        // titik terlalu atas -> tooltip tampil di bawah titik
+    tt.style.transform = 'translate(-50%, 14px)';
+  } else {
+    tt.style.transform = 'translate(-50%, calc(-100% - 12px))';
+  }
+  tt.style.top = y + 'px';
 }
+// ketuk di luar grafik -> tutup tooltip
+document.addEventListener('click', function(e){
+  const wrap = document.getElementById('lapKekayaanWrap');
+  if (!wrap || wrap.contains(e.target)) return;
+  if (state.kekayaanBuckets) renderKekayaanChart(state.kekayaanBuckets, null);
+});
 
 /* ---------------- LAPORAN: SALDO BULAN INI VS BULAN LALU ---------------- */
 function renderSaldoBandingInsight(data){
